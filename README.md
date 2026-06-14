@@ -41,7 +41,7 @@ The browser protocol is intentionally small JSON over `/api/ws`:
 
 For the CX9240 rollout, install Node and dependencies on the CX itself. Do not copy a Windows `node_modules` folder to the Linux target.
 
-Preferred transfer is git clone/pull or a git bundle. Copy the project source to `/opt/sveltehmi`, excluding `node_modules/` and `dist/`, then run on the CX:
+Preferred transfer is git clone/pull or a git bundle. The CX needs `git`; `gh` is optional. Copy the project source to `/opt/sveltehmi`, excluding `node_modules/` and `dist/`, then run on the CX:
 
 ```sh
 cd /opt/sveltehmi

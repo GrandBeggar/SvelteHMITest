@@ -58,14 +58,44 @@ Known target baseline from prior site notes:
    npm --version
    ```
 
-5. Create the app directory:
+5. Install/check git tooling.
+
+   Git is needed for the preferred rollout path. GitHub CLI (`gh`) is optional; install it only if you want authenticated GitHub operations from the CX instead of using a token, SSH key, or bundle.
+
+   ```sh
+   git --version
+   gh --version
+   ```
+
+   If missing and apt packages are available:
+
+   ```sh
+   sudo apt update
+   sudo apt install git
+   ```
+
+   Optional GitHub CLI check/install:
+
+   ```sh
+   apt-cache policy gh
+   sudo apt install gh
+   gh auth login
+   ```
+
+   If `gh` is not available in Beckhoff/Debian repos, skip it and use one of:
+
+   - HTTPS clone with a GitHub token.
+   - SSH clone with a deploy key.
+   - Git bundle copied from the laptop.
+
+6. Create the app directory:
 
    ```sh
    sudo mkdir -p /opt/sveltehmi
    sudo chown "$USER":"$USER" /opt/sveltehmi
    ```
 
-6. Preferred transfer path: use git so the CX receives source, not Windows dependencies.
+7. Preferred transfer path: use git so the CX receives source, not Windows dependencies.
 
    If the CX has access to the repository:
 
@@ -100,7 +130,7 @@ Known target baseline from prior site notes:
    git bundle create sveltehmi.bundle --all
    ```
 
-7. Manual copy fallback: copy the project source to `/opt/sveltehmi`, excluding Windows dependencies/build output:
+8. Manual copy fallback: copy the project source to `/opt/sveltehmi`, excluding Windows dependencies/build output:
 
    ```text
    copy these:
@@ -119,7 +149,7 @@ Known target baseline from prior site notes:
    dist/
    ```
 
-8. Install dependencies on the CX:
+9. Install dependencies on the CX:
 
    ```sh
    cd /opt/sveltehmi
@@ -128,13 +158,13 @@ Known target baseline from prior site notes:
 
    This installs the Linux/ARM-compatible dependency tree on the CX. The current runtime dependencies are pure JS (`ads-client` and `ws`), but the build toolchain can still include platform-specific optional packages, so installing on the CX is the cleanest route.
 
-9. Build on the CX:
+10. Build on the CX:
 
    ```sh
    npm run build
    ```
 
-10. Run the server smoke check:
+11. Run the server smoke check:
 
    ```sh
    npm run smoke
