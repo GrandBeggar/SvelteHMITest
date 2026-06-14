@@ -1,0 +1,20 @@
+[Unit]
+Description=SvelteHMI Node gateway and web server
+Wants=network-online.target
+After=network-online.target TcSystemServiceUm.service
+
+[Service]
+Type=simple
+User=tf1200
+WorkingDirectory=/opt/sveltehmi
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=HMI_MODE=ads
+Environment=ADS_TARGET_AMS=127.0.0.1.1.1
+Environment=ADS_TARGET_PORT=851
+ExecStart=/usr/bin/node /opt/sveltehmi/server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

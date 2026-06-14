@@ -1,0 +1,22 @@
+{
+  "name": "sveltehmi",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "serve": "node server.js",
+    "smoke": "node server.js --smoke"
+  },
+  "dependencies": {
+    "ads-client": "^2.2.0",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "svelte": "^5.53.12",
+    "vite": "^8.0.1"
+  }
+}
