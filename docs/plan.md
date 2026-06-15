@@ -146,11 +146,32 @@ DoD:
 - `npm run build` and the full gate pass.
 - Auditor verifies no text overlaps at the target viewport and no UI depends on mock-only symbols.
 
+## Phase: Design System Foundation
+
+Goal: establish the shared ISA-101 visual substrate (tokens + core touch components) so screen phases are built on it once, per decision 0008.
+
+Depends on: HMI Shell.
+
+Brief:
+- Port the `--kita-*` token system and ISA-101 chip palette from the reference into `app.css`.
+- Port the core touch components presentation-only, re-wired to contract keys: `NumPad`, `Keyboard`, `Modal`/`ConfirmDialog`, `StateMachineChip`, `StatusBanner`, `ParamInput`/`ParamRow`.
+- Do not import the reference data layer (`connections.js` raw symbols, `SymbolBrowser`, reference `ads.svelte.js`).
+- Standardize on the dark palette; leave unfinished reference screens (e.g. Settings layout) out of scope.
+
+DoD:
+- Token system lives in `app.css`; components reference `--kita-*` tokens, no hard-coded colors (lint/grep check).
+- Ported components carry no raw ADS symbol strings; any data binding is via contract keys through the gateway store.
+- `StateMachineChip` renders each ISA-101 state from a contract-backed value, not an invented state.
+- Component tests cover `NumPad` entry/accept/cancel and chip state-to-class mapping.
+- Browser/viewport test (per HMI Shell precedent) confirms no overflow at desktop and TF1200 with the new components mounted.
+- Full gate passes.
+- Auditor verifies no ported component reaches ADS without a contract key, and no `SymbolBrowser`/raw-symbol path was introduced.
+
 ## Phase: Overview And Run Screen
 
 Goal: build the operator's primary running view.
 
-Depends on: HMI Shell.
+Depends on: HMI Shell, Design System Foundation.
 
 Brief:
 - Show machine readiness, safety/control-power state, cycle/start state, key sensors, selected/active recipe or pattern, and production counters.
@@ -166,7 +187,7 @@ DoD:
 
 Goal: implement retained recipe/pattern controls through the PLC recipe command protocol.
 
-Depends on: Gateway Contract Layer, HMI Shell.
+Depends on: Gateway Contract Layer, HMI Shell, Design System Foundation.
 
 Brief:
 - Implement selected recipe and pattern index controls.
@@ -187,7 +208,7 @@ DoD:
 
 Goal: provide service diagnostics without turning diagnostics into normal operator controls.
 
-Depends on: Gateway Contract Layer, HMI Shell.
+Depends on: Gateway Contract Layer, HMI Shell, Design System Foundation.
 
 Brief:
 - Build read-first IO diagnostics for inputs, outputs, and service metrics.
@@ -207,7 +228,7 @@ DoD:
 
 Goal: show actionable machine state and faults without inventing unsupported alarm semantics.
 
-Depends on: Machine Contract Inventory, HMI Shell.
+Depends on: Machine Contract Inventory, HMI Shell, Design System Foundation.
 
 Brief:
 - Use existing PLC alarm/status symbols if available.
