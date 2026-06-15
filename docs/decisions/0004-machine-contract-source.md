@@ -14,6 +14,16 @@ PLC source roots:
 1336: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1336\PLC
 ```
 
+Reference copies (non-authoritative, reference-only):
+
+```text
+1054: D:\dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1054\PLC
+1270: D:\dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1270\PLC
+1336: D:\dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1336\PLC
+```
+
+These dev-workstation copies exist as PLC source reference — they document which setpoints and state monitors the program requires. They are not the pinned authority, not a gate/test dependency (see decision 0007), and may differ from the pinned artifacts. The local `1336` `.tmc` differs in size and hash from the pin below; the pin remains authoritative.
+
 Pinned evidence:
 
 ```text
