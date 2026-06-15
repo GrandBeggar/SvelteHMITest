@@ -80,6 +80,10 @@ function sendOverviewValues(ws, overrides = {}) {
   }
 }
 
+function latestSent(ws, predicate) {
+  return [...ws.sent].reverse().find(predicate);
+}
+
 test('renders the HMI shell and subscribes through contract keys', async () => {
   const { default: App } = await import('./App.svelte');
 
@@ -114,6 +118,11 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
       (payload) => payload.type === 'subscribe' && payload.key === 'runtime.initialized',
     ),
   ).toBe(true);
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key.startsWith('manual.coils.'),
+    ),
+  ).toBe(false);
 
   sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });
   sendOverviewValues(ws);
@@ -189,6 +198,183 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
           payload.type === 'write' && payload.key === 'recipe.command' && payload.value === 'Save',
       ),
     ).toBe(true),
+  );
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Diagnostics' }));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Diagnostics' })).toBeTruthy());
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) => payload.type === 'subscribe' && payload.key === 'manual.coils.vacuum.out',
+      ),
+    ).toBe(true),
+  );
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key === 'manual.coils.vacuum.status',
+    ),
+  ).toBe(true);
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key === 'manual.coils.vacuum.force',
+    ),
+  ).toBe(false);
+
+  sendValue(ws, 'manual.coils.vacuum.out', false);
+  sendValue(ws, 'manual.coils.vacuum.status', 0);
+
+  await waitFor(() => expect(screen.getByText('Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getByLabelText('Service Enable'));
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On Vacuum' }));
+  await waitFor(() => expect(screen.getByText('Force On Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On' }));
+
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'manual.coils.vacuum.force' &&
+          payload.value === 'On',
+      ),
+    ).toBe(true),
+  );
+  let forceWrite = latestSent(
+    ws,
+    (payload) =>
+      payload.type === 'write' &&
+      payload.key === 'manual.coils.vacuum.force' &&
+      payload.value === 'On',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'manual.coils.vacuum.force',
+    requestId: forceWrite.requestId,
+  });
+  sendValue(ws, 'manual.coils.vacuum.out', true);
+  sendValue(ws, 'manual.coils.vacuum.status', 2);
+  await waitFor(() => expect(screen.getByText('Vacuum Force On accepted')).toBeTruthy());
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Force Off Vacuum' }));
+  await waitFor(() => expect(screen.getByText('Force Off Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Force Off' }));
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'manual.coils.vacuum.force' &&
+          payload.value === 'Off',
+      ),
+    ).toBe(true),
+  );
+  forceWrite = latestSent(
+    ws,
+    (payload) =>
+      payload.type === 'write' &&
+      payload.key === 'manual.coils.vacuum.force' &&
+      payload.value === 'Off',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'manual.coils.vacuum.force',
+    requestId: forceWrite.requestId,
+  });
+  sendValue(ws, 'manual.coils.vacuum.out', false);
+  sendValue(ws, 'manual.coils.vacuum.status', 3);
+  await waitFor(() => expect(screen.getByText('Vacuum Force Off accepted')).toBeTruthy());
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Return Auto Vacuum' }));
+  await waitFor(() => expect(screen.getByText('Auto Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getAllByRole('button', { name: 'Auto' }).at(-1));
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'manual.coils.vacuum.force' &&
+          payload.value === 'Auto',
+      ),
+    ).toBe(true),
+  );
+  forceWrite = latestSent(
+    ws,
+    (payload) =>
+      payload.type === 'write' &&
+      payload.key === 'manual.coils.vacuum.force' &&
+      payload.value === 'Auto',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'manual.coils.vacuum.force',
+    requestId: forceWrite.requestId,
+  });
+  sendValue(ws, 'manual.coils.vacuum.status', 0);
+  await waitFor(() => expect(screen.getByText('Vacuum Auto accepted')).toBeTruthy());
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On Vacuum' }));
+  await waitFor(() => expect(screen.getByText('Force On Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On' }));
+  await waitFor(() =>
+    expect(
+      latestSent(
+        ws,
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'manual.coils.vacuum.force' &&
+          payload.value === 'On',
+      ),
+    ).toBeTruthy(),
+  );
+  forceWrite = latestSent(
+    ws,
+    (payload) =>
+      payload.type === 'write' &&
+      payload.key === 'manual.coils.vacuum.force' &&
+      payload.value === 'On',
+  );
+  ws.receive({
+    type: 'error',
+    key: 'manual.coils.vacuum.force',
+    message: 'ADS rejected force write',
+    requestId: forceWrite.requestId,
+  });
+  await waitFor(() =>
+    expect(screen.getByText('manual.coils.vacuum.force: ADS rejected force write')).toBeTruthy(),
+  );
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) => payload.type === 'unsubscribe' && payload.key === 'manual.coils.vacuum.out',
+      ),
+    ).toBe(true),
+  );
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'unsubscribe' && payload.key === 'manual.coils.vacuum.status',
+    ),
+  ).toBe(true);
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Diagnostics' }));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Diagnostics' })).toBeTruthy());
+  sendValue(ws, 'manual.coils.vacuum.out', false);
+  sendValue(ws, 'manual.coils.vacuum.status', 0);
+  await fireEvent.click(screen.getByLabelText('Service Enable'));
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On Vacuum' }));
+  await waitFor(() => expect(screen.getByText('Force On Vacuum')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Force On' }));
+  await waitFor(() =>
+    expect(
+      latestSent(
+        ws,
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'manual.coils.vacuum.force' &&
+          payload.value === 'On',
+      ),
+    ).toBeTruthy(),
   );
   ws.close();
 

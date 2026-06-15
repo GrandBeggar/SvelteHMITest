@@ -98,6 +98,12 @@ describe('gateway contract enforcement', () => {
         message: 'safety.controlPower is not writable',
       });
 
+      send(ws, { type: 'write', key: 'manual.coils.vacuum.out', value: true });
+      await expect(nextMessage(ws, (message) => message.type === 'error')).resolves.toMatchObject({
+        key: 'manual.coils.vacuum.out',
+        message: 'manual.coils.vacuum.out is not writable',
+      });
+
       send(ws, { type: 'write', key: 'pattern.index', value: 'bad' });
       await expect(nextMessage(ws, (message) => message.type === 'error')).resolves.toMatchObject({
         key: 'pattern.index',
@@ -123,6 +129,120 @@ describe('gateway contract enforcement', () => {
           (message) => message.type === 'value' && message.key === 'mode.dryCycleEnable',
         ),
       ).resolves.toMatchObject({ value: true });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  test('subscribes and unsubscribes diagnostic keys explicitly', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'mock');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, { type: 'subscribe', key: 'manual.coils.vacuum.out', cycleTime: 250 });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.out',
+        ),
+      ).resolves.toMatchObject({
+        key: 'manual.coils.vacuum.out',
+        symbol: 'MF.Coils.Vacuum.bOut',
+      });
+
+      send(ws, { type: 'unsubscribe', key: 'manual.coils.vacuum.out' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'unsubscribed' && message.key === 'manual.coils.vacuum.out',
+        ),
+      ).resolves.toMatchObject({
+        key: 'manual.coils.vacuum.out',
+      });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  test('models coil force on, off, and auto through eForce readbacks in mock mode', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'mock');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, { type: 'write', key: 'manual.coils.vacuum.force', value: 'On', requestId: 'on' });
+      await expect(
+        nextMessage(ws, (message) => message.type === 'written' && message.requestId === 'on'),
+      ).resolves.toMatchObject({
+        key: 'manual.coils.vacuum.force',
+        symbol: 'MF.Coils.Vacuum.eForce',
+      });
+
+      send(ws, { type: 'read', key: 'manual.coils.vacuum.out' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.out',
+        ),
+      ).resolves.toMatchObject({ value: true });
+
+      send(ws, { type: 'read', key: 'manual.coils.vacuum.status' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.status',
+        ),
+      ).resolves.toMatchObject({ value: 2 });
+
+      send(ws, { type: 'write', key: 'manual.coils.vacuum.force', value: 'Off', requestId: 'off' });
+      await expect(
+        nextMessage(ws, (message) => message.type === 'written' && message.requestId === 'off'),
+      ).resolves.toMatchObject({ key: 'manual.coils.vacuum.force' });
+
+      send(ws, { type: 'read', key: 'manual.coils.vacuum.out' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.out',
+        ),
+      ).resolves.toMatchObject({ value: false });
+
+      send(ws, { type: 'read', key: 'manual.coils.vacuum.status' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.status',
+        ),
+      ).resolves.toMatchObject({ value: 3 });
+
+      send(ws, {
+        type: 'write',
+        key: 'manual.coils.vacuum.force',
+        value: 'Auto',
+        requestId: 'auto',
+      });
+      await expect(
+        nextMessage(ws, (message) => message.type === 'written' && message.requestId === 'auto'),
+      ).resolves.toMatchObject({ key: 'manual.coils.vacuum.force' });
+
+      send(ws, { type: 'read', key: 'manual.coils.vacuum.status' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'manual.coils.vacuum.status',
+        ),
+      ).resolves.toMatchObject({ value: 0 });
 
       ws.close();
     } finally {
@@ -275,6 +395,39 @@ describe('gateway contract enforcement', () => {
       ).resolves.toMatchObject({
         key: 'recipe.command',
         requestId: 'ads-load',
+      });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  test('reports an error when ADS mode rejects a coil force write', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'ads');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, {
+        type: 'write',
+        key: 'manual.coils.vacuum.force',
+        value: 'On',
+        requestId: 'ads-force',
+      });
+
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'error' && message.key === 'manual.coils.vacuum.force',
+          8000,
+        ),
+      ).resolves.toMatchObject({
+        key: 'manual.coils.vacuum.force',
+        requestId: 'ads-force',
       });
 
       ws.close();

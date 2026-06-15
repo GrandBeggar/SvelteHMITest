@@ -1,4 +1,5 @@
 const values = $state({});
+const valueMeta = $state({});
 const status = $state({
   gateway: false,
   ads: false,
@@ -50,6 +51,7 @@ function connect() {
 
     if (msg.type === 'value') {
       values[msg.key] = msg.value;
+      valueMeta[msg.key] = { updatedAt: Date.now() };
       return;
     }
 
@@ -103,6 +105,11 @@ export function subscribe(key, cycleTime = 250) {
   send(payload);
 }
 
+export function unsubscribe(key) {
+  pendingSubscriptions.delete(key);
+  send({ type: 'unsubscribe', key });
+}
+
 export function read(key) {
   send({ type: 'read', key });
 }
@@ -127,6 +134,10 @@ export function write(key, value, { timeoutMs = 4000 } = {}) {
 
 export function getValues() {
   return values;
+}
+
+export function getValueMeta() {
+  return valueMeta;
 }
 
 export function getStatus() {
