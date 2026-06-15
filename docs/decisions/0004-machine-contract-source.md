@@ -4,32 +4,40 @@
 
 The HMI machine contract must be derived from a committed PLC source tree and pinned `.tmc` symbol artifact, not from an uncommitted TwinCAT working tree.
 
-Current status: pending. The PLC source observed during the first plan audit is dirty and cannot yet serve as the final contract authority.
+Current status: pinned from clean committed PLC trees on 2026-06-14.
 
-Observed PLC source during audit:
+PLC source roots:
 
 ```text
-Path: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1270\PLC
-HEAD: c5255f83677b4ded3d074ecc9b3400cfc0c4da21
-Status: dirty
-Authoritative symbol artifact candidate: MultiFormPLC/MultiFormPLC.tmc
+1054: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1054\PLC
+1270: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1270\PLC
+1336: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1336\PLC
 ```
 
-Before Machine Contract Inventory starts, replace the pending fields below with committed evidence:
+Pinned evidence:
 
 ```text
-1270 PLC commit: PENDING
-1054 PLC commit: PENDING
-1336 PLC commit: PENDING
-Pinned symbol artifact(s): PENDING
-Artifact hash(es): PENDING
-Clean status proof: PENDING
-Clean cross-variant GVL/DUT/POU diff proof: PENDING
+1054 PLC commit: 99f3c75c1a84cd167004a6324a30ce98db280e96
+1270 PLC commit: ecc8d7ac6a2df960af7e599d5358a6ad7e69362f
+1336 PLC commit: 9ff5ceae8a2be3f63337b26d6b0f30942a82abb2
+
+Pinned symbol artifacts:
+1054: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1054\PLC\MultiFormPLC\MultiFormPLC.tmc
+1270: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1270\PLC\MultiFormPLC\MultiFormPLC.tmc
+1336: C:\Dev\TwinCAT\KITA Ipak Retrofit\KITA Ipak Retrofit 1336\PLC\MultiFormPLC\MultiFormPLC.tmc
+
+Artifact SHA256 hashes:
+1054: 4A0ED0DFE5DFC59BF587DCABFCCAAA84B0F8591D01437BE1913F4162A18CD49E
+1270: 6052347721A7EEC0B1812314FB39AAEAC136E877669CBB0D290D5D262848C1CD
+1336: 1E25A4A2BB524829E1E648BBA352D236FB9A4FABF815A15F1E4BA93E98E0D22E
+
+Clean status proof: docs/audits/2026-06-14-plc-source-pin.md
+Clean cross-variant GVL/DUT/POU diff proof: docs/audits/2026-06-14-plc-source-pin.md
 ```
 
 ## Rationale
 
-The onsite HMI ADS test proved real symbols, but the matching PLC source currently exists in an uncommitted working tree. A contract derived from dirty source cannot be re-derived by an auditor, compared across variants, or safely used as the basis for gateway write enforcement.
+The onsite HMI ADS test proved real symbols, but the matching PLC source initially existed in uncommitted working trees. A contract derived from dirty source cannot be re-derived by an auditor, compared across variants, or safely used as the basis for gateway write enforcement. The pinned commits above freeze the source and `.tmc` artifacts that Machine Contract Inventory must validate against.
 
 ## Consequences
 
