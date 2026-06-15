@@ -9,6 +9,7 @@
     "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,json,svelte}\" \"scripts/**/*.js\" \"test/**/*.js\"",
     "test": "vitest --run",
     "contract:validate": "node scripts/validate-machine-contract.js",
+    "design:tokens": "node scripts/check-design-tokens.js",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "serve": "node server.js",
