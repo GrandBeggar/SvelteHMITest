@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 class MockWebSocket {
@@ -20,6 +20,11 @@ class MockWebSocket {
 
   receive(payload) {
     this.onmessage?.({ data: JSON.stringify(payload) });
+  }
+
+  close() {
+    this.readyState = 3;
+    this.onclose?.();
   }
 }
 
@@ -57,6 +62,7 @@ function sendOverviewValues(ws, overrides = {}) {
     'input.hopperNotEmpty': true,
     'input.trayPicked': false,
     'input.outfeedSensor': false,
+    'recipe.maxCount': 20,
     'recipe.activeIndex': 1,
     'recipe.selectedIndex': 1,
     'pattern.index': 2,
@@ -127,4 +133,64 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
 
   await waitFor(() => expect(screen.getAllByText('Connection Hold').length).toBeGreaterThan(0));
   expect(screen.getAllByText('Stale').length).toBeGreaterThan(0);
+
+  sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });
+  sendOverviewValues(ws, {
+    'recipe.activeIndex': 1,
+    'recipe.selectedIndex': 4,
+    'recipe.hasUnsavedChanges': true,
+  });
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  await waitFor(() => expect(screen.getByText('Recipe Controls')).toBeTruthy());
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Load' }));
+  await waitFor(() => expect(screen.getByText('Load Recipe')).toBeTruthy());
+  await fireEvent.click(screen.getAllByRole('button', { name: 'Load' }).at(-1));
+
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' && payload.key === 'recipe.selectedIndex' && payload.value === 4,
+      ),
+    ).toBe(true),
+  );
+  const selectedWrite = ws.sent.find(
+    (payload) => payload.type === 'write' && payload.key === 'recipe.selectedIndex',
+  );
+  ws.receive({ type: 'written', key: 'recipe.selectedIndex', requestId: selectedWrite.requestId });
+
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' && payload.key === 'recipe.command' && payload.value === 'Load',
+      ),
+    ).toBe(true),
+  );
+  const commandWrite = ws.sent.find(
+    (payload) => payload.type === 'write' && payload.key === 'recipe.command',
+  );
+  ws.receive({ type: 'written', key: 'recipe.command', requestId: commandWrite.requestId });
+  sendValue(ws, 'recipe.activeIndex', 4);
+  sendValue(ws, 'recipe.hasUnsavedChanges', false);
+
+  await waitFor(() => expect(screen.getAllByText('Recipe 4 loaded').length).toBeGreaterThan(0));
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(screen.getByText('Save Recipe')).toBeTruthy());
+  await fireEvent.click(screen.getAllByRole('button', { name: 'Save' }).at(-1));
+
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' && payload.key === 'recipe.command' && payload.value === 'Save',
+      ),
+    ).toBe(true),
+  );
+  ws.close();
+
+  await waitFor(() => expect(screen.getByText('Gateway disconnected; retrying...')).toBeTruthy());
 });

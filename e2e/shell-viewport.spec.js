@@ -34,13 +34,13 @@ for (const viewport of viewports) {
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: 'Recipe' }).click();
-    await expect(page.getByRole('heading', { name: 'Recipe' })).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('PLC Connected');
+    await expect(page.getByRole('heading', { name: 'Recipe Controls' })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('PLC Command Path Ready');
     await expect(page.locator('.param-box')).toHaveCount(2);
     await expectNoHorizontalOverflow(page);
 
     await page.locator('.param-box').first().click();
-    await expect(page.getByRole('dialog')).toContainText('Pattern - Index');
+    await expect(page.getByRole('dialog')).toContainText('Recipe - Selected');
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });

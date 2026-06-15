@@ -132,6 +132,12 @@ p {
   color: var(--kita-chip-fg);
 }
 
+.kita-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
 .app-shell {
   min-height: 100vh;
   display: grid;
@@ -475,6 +481,79 @@ p {
   align-items: stretch;
 }
 
+.recipe-layout {
+  min-width: 0;
+  display: grid;
+  gap: var(--kita-space-3);
+  padding: 14px;
+}
+
+.recipe-header,
+.recipe-command-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  gap: var(--kita-space-3);
+  align-items: stretch;
+  border: 1px solid var(--kita-border-emphasis);
+  border-radius: var(--kita-radius-panel);
+  padding: var(--kita-space-4);
+  background: var(--kita-bg-card);
+}
+
+.recipe-header h2,
+.recipe-command-copy h3 {
+  margin: 0;
+  font-size: var(--kita-font-xl);
+  line-height: 1.1;
+}
+
+.recipe-readbacks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--kita-space-2);
+}
+
+.recipe-command-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--kita-space-2);
+}
+
+.recipe-command-copy p {
+  color: var(--kita-text-secondary);
+  font-size: var(--kita-font-md);
+  line-height: 1.4;
+}
+
+.recipe-form {
+  min-width: 0;
+  display: grid;
+  gap: var(--kita-space-3);
+}
+
+.recipe-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--kita-space-2);
+}
+
+.recipe-alert {
+  border: 1px solid var(--kita-chip-running-bg);
+  border-radius: var(--kita-radius-control);
+  padding: var(--kita-space-2) var(--kita-space-3);
+  background: var(--kita-status-online-bg);
+  color: var(--kita-text-ready);
+  font-size: var(--kita-font-sm);
+  font-weight: 850;
+}
+
+.recipe-alert.danger {
+  border-color: var(--kita-chip-faulted-bg);
+  background: var(--kita-status-offline-bg);
+  color: var(--kita-text-danger);
+}
+
 .page-placeholder {
   min-height: 0;
   padding: var(--kita-space-5);
@@ -529,7 +608,9 @@ p {
 
   .run-readouts,
   .performance-values,
-  .footer-chips {
+  .footer-chips,
+  .recipe-readbacks,
+  .recipe-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -597,6 +678,8 @@ p {
   .run-group,
   .performance,
   .run-footer,
+  .recipe-header,
+  .recipe-command-panel,
   .placeholder-grid {
     grid-template-columns: 1fr;
   }
@@ -626,7 +709,9 @@ p {
   .run-readouts,
   .run-group-pocket,
   .performance-values,
-  .footer-chips {
+  .footer-chips,
+  .recipe-readbacks,
+  .recipe-actions {
     grid-template-columns: 1fr;
   }
 }

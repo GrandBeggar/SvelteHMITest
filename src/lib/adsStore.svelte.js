@@ -8,7 +8,9 @@ const status = $state({
 
 let ws;
 let reconnectTimer;
+let nextRequestId = 1;
 const pendingSubscriptions = new Map();
+const pendingWrites = new Map();
 
 function wsUrl() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -51,8 +53,14 @@ function connect() {
       return;
     }
 
+    if (msg.type === 'written') {
+      settleWrite(msg.requestId, null, msg);
+      return;
+    }
+
     if (msg.type === 'error') {
       status.message = msg.key ? `${msg.key}: ${msg.message}` : msg.message;
+      settleWrite(msg.requestId, new Error(status.message));
     }
   };
 
@@ -60,12 +68,33 @@ function connect() {
     status.gateway = false;
     status.ads = false;
     status.message = 'Gateway disconnected; retrying...';
+    rejectPendingWrites(new Error(status.message));
     reconnectTimer = setTimeout(connect, 2000);
   };
 
   ws.onerror = () => {
     status.message = 'Gateway socket error';
   };
+}
+
+function settleWrite(requestId, error, result) {
+  if (!requestId || !pendingWrites.has(requestId)) return;
+  const pending = pendingWrites.get(requestId);
+  clearTimeout(pending.timeout);
+  pendingWrites.delete(requestId);
+
+  if (error) {
+    pending.reject(error);
+    return;
+  }
+
+  pending.resolve(result);
+}
+
+function rejectPendingWrites(error) {
+  for (const requestId of pendingWrites.keys()) {
+    settleWrite(requestId, error);
+  }
 }
 
 export function subscribe(key, cycleTime = 250) {
@@ -78,8 +107,22 @@ export function read(key) {
   send({ type: 'read', key });
 }
 
-export function write(key, value) {
-  send({ type: 'write', key, value });
+export function write(key, value, { timeoutMs = 4000 } = {}) {
+  const requestId = `write-${nextRequestId++}`;
+  const payload = { type: 'write', key, value, requestId };
+
+  if (!send(payload)) {
+    return Promise.reject(new Error('Gateway is not connected'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingWrites.delete(requestId);
+      reject(new Error(`${key} write timed out`));
+    }, timeoutMs);
+
+    pendingWrites.set(requestId, { resolve, reject, timeout });
+  });
 }
 
 export function getValues() {
