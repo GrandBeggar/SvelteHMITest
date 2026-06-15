@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check": "svelte-check",
-    "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,svelte}\" \"test/**/*.js\"",
+    "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,json,svelte}\" \"scripts/**/*.js\" \"test/**/*.js\"",
     "test": "vitest --run",
+    "contract:validate": "node scripts/validate-machine-contract.js",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "serve": "node server.js",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@testing-library/svelte": "^5.3.1",
+    "fast-xml-parser": "^5.9.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.8.4",
     "prettier-plugin-svelte": "^4.1.0",
