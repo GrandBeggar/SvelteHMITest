@@ -3,12 +3,22 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { extname, join, relative, resolve, sep } from 'path';
+import {
+  buildContractIndex,
+  buildMockValues,
+  canRead,
+  canWrite,
+  coerceContractValue,
+} from './src/lib/contractRuntime.js';
 
 const args = new Set(process.argv.slice(2));
 const DIST = resolve(import.meta.dirname, 'dist');
+const CONTRACT_PATH = resolve(import.meta.dirname, 'src/lib/machine-contract.json');
 const PORT = Number(process.env.PORT ?? 3001);
 const MODE = (process.env.HMI_MODE ?? 'mock').toLowerCase();
 const WS_OPEN = 1;
+const machineContract = JSON.parse(readFileSync(CONTRACT_PATH, 'utf8'));
+const { symbols: contractSymbols } = buildContractIndex(machineContract);
 
 const ADS_CONFIG = {
   targetAmsNetId: process.env.ADS_TARGET_AMS ?? '127.0.0.1.1.1',
@@ -41,29 +51,8 @@ let adsConnected = false;
 let connectingPromise;
 let statusMessage = MODE === 'ads' ? 'ADS not connected yet' : 'Mock mode active';
 const subscriptions = new Map();
-const activeSymbols = new Map();
-const mockValues = new Map([
-  ['MAIN.bMachineIsInitialized', true],
-  ['Inputs.bControlPower', true],
-  ['Inputs.bSafetyCircuitOK', true],
-  ['Inputs.bCycleSwitch', false],
-  ['Inputs.bStartButton', false],
-  ['Inputs.bHopperIsNotEmptyPE', true],
-  ['Inputs.bTrayPickedPE', false],
-  ['Inputs.bOutfeedSensor', false],
-  ['MF.Coils.Vacuum.bOut', false],
-  ['MF.Coils.OutfeedConveyor.bOut', false],
-  ['MF.Coils.BackStops.bOut', false],
-  ['C.nRECIPE_MAX_COUNT', 20],
-  ['MF.HMI.Recipe.nActiveIndex', 1],
-  ['MF.HMI.Recipe.nSelectedIndex', 1],
-  ['MF.HMI.nPatternIndex', 1],
-  ['MF.HMI.bDryCycleEnable', false],
-  ['MF.Metrics.nTrayCount', 0],
-  ['MF.Metrics.rTraysPerMinute', 0],
-  ['MF.Metrics.nTraysLastMinute', 0],
-  ['MF.Metrics.nTraysLastHour', 0],
-]);
+const activeKeys = new Map();
+const mockValues = buildMockValues(contractSymbols);
 const staticFiles = loadStaticFiles(DIST);
 
 function cleanConfig(config) {
@@ -92,6 +81,27 @@ function statusPayload() {
     mode: MODE,
     message: statusMessage,
   };
+}
+
+function contractEntry(key, operation) {
+  if (typeof key !== 'string' || !key) {
+    throw new Error('Message requires a contract key');
+  }
+
+  const entry = contractSymbols[key];
+  if (!entry) {
+    throw new Error(`Unknown contract key: ${key}`);
+  }
+
+  if ((operation === 'read' || operation === 'subscribe') && !canRead(entry)) {
+    throw new Error(`${key} is not readable`);
+  }
+
+  if (operation === 'write' && !canWrite(entry)) {
+    throw new Error(`${key} is not writable`);
+  }
+
+  return entry;
 }
 
 function safeStaticKey(pathname) {
@@ -185,8 +195,8 @@ async function connectAds() {
     statusMessage = `ADS connected to ${connection.targetAmsNetId}:${connection.targetAdsPort}`;
     broadcast(statusPayload());
 
-    for (const [symbol, cycleTime] of activeSymbols) {
-      await subscribeAds(symbol, cycleTime);
+    for (const [key, cycleTime] of activeKeys) {
+      await subscribeAds(key, cycleTime);
     }
   })();
 
@@ -213,55 +223,62 @@ async function ensureAds() {
   }
 }
 
-async function subscribeAds(symbol, cycleTime) {
-  if (subscriptions.has(symbol)) return;
+async function subscribeAds(key, cycleTime) {
+  if (subscriptions.has(key)) return;
+  const entry = contractEntry(key, 'subscribe');
 
   const subscription = await ads.subscribe({
-    target: symbol,
+    target: entry.symbol,
     cycleTime,
     callback: (data) => {
-      broadcast({ type: 'value', symbol, value: data.value });
+      broadcast({ type: 'value', key, symbol: entry.symbol, value: data.value });
     },
   });
 
-  subscriptions.set(symbol, subscription);
+  subscriptions.set(key, subscription);
 }
 
-async function handleRead(symbol, ws) {
+async function handleRead(key, ws) {
+  const entry = contractEntry(key, 'read');
+
   if (MODE === 'mock') {
-    send(ws, { type: 'value', symbol, value: mockValues.get(symbol) ?? null });
+    send(ws, { type: 'value', key, symbol: entry.symbol, value: mockValues.get(key) ?? null });
     return;
   }
 
   await ensureAds();
-  const result = await ads.readValue(symbol);
-  send(ws, { type: 'value', symbol, value: result.value });
+  const result = await ads.readValue(entry.symbol);
+  send(ws, { type: 'value', key, symbol: entry.symbol, value: result.value });
 }
 
-async function handleWrite(symbol, value, ws) {
+async function handleWrite(key, value, ws) {
+  const entry = contractEntry(key, 'write');
+  const coercedValue = coerceContractValue(machineContract, entry, value);
+
   if (MODE === 'mock') {
-    mockValues.set(symbol, value);
-    broadcast({ type: 'value', symbol, value });
+    mockValues.set(key, coercedValue);
+    broadcast({ type: 'value', key, symbol: entry.symbol, value: coercedValue });
     return;
   }
 
   await ensureAds();
-  await ads.writeValue(symbol, value);
-  send(ws, { type: 'written', symbol });
+  await ads.writeValue(entry.symbol, coercedValue);
+  send(ws, { type: 'written', key, symbol: entry.symbol });
 }
 
-async function handleSubscribe(symbol, cycleTime, ws) {
-  activeSymbols.set(symbol, cycleTime);
+async function handleSubscribe(key, cycleTime, ws) {
+  const entry = contractEntry(key, 'subscribe');
+  activeKeys.set(key, cycleTime);
 
   if (MODE === 'mock') {
-    send(ws, { type: 'value', symbol, value: mockValues.get(symbol) ?? null });
+    send(ws, { type: 'value', key, symbol: entry.symbol, value: mockValues.get(key) ?? null });
     return;
   }
 
   await ensureAds();
-  await subscribeAds(symbol, cycleTime);
-  const current = await ads.readValue(symbol);
-  send(ws, { type: 'value', symbol, value: current.value });
+  await subscribeAds(key, cycleTime);
+  const current = await ads.readValue(entry.symbol);
+  send(ws, { type: 'value', key, symbol: entry.symbol, value: current.value });
 }
 
 wss.on('connection', (ws) => {
@@ -273,30 +290,36 @@ wss.on('connection', (ws) => {
       msg = JSON.parse(raw);
 
       if (msg.type === 'read') {
-        await handleRead(msg.symbol, ws);
+        await handleRead(msg.key, ws);
       } else if (msg.type === 'write') {
-        await handleWrite(msg.symbol, msg.value, ws);
+        await handleWrite(msg.key, msg.value, ws);
       } else if (msg.type === 'subscribe') {
-        await handleSubscribe(msg.symbol, Number(msg.cycleTime ?? 250), ws);
+        await handleSubscribe(msg.key, Number(msg.cycleTime ?? 250), ws);
       } else {
         send(ws, { type: 'error', message: `Unknown message type: ${msg.type}` });
       }
     } catch (error) {
-      send(ws, { type: 'error', symbol: msg?.symbol, message: error.message });
+      send(ws, { type: 'error', key: msg?.key, message: error.message });
     }
   });
 });
 
 setInterval(() => {
   if (MODE === 'mock') {
-    const next = Number(mockValues.get('MF.Metrics.nTrayCount') ?? 0) + 1;
-    mockValues.set('MF.Metrics.nTrayCount', next);
-    mockValues.set('MF.Metrics.rTraysPerMinute', Number((next % 12) * 1.5));
-    broadcast({ type: 'value', symbol: 'MF.Metrics.nTrayCount', value: next });
+    const next = Number(mockValues.get('metrics.trayCount') ?? 0) + 1;
+    mockValues.set('metrics.trayCount', next);
+    mockValues.set('metrics.traysPerMinute', Number((next % 12) * 1.5));
     broadcast({
       type: 'value',
-      symbol: 'MF.Metrics.rTraysPerMinute',
-      value: mockValues.get('MF.Metrics.rTraysPerMinute'),
+      key: 'metrics.trayCount',
+      symbol: contractSymbols['metrics.trayCount'].symbol,
+      value: next,
+    });
+    broadcast({
+      type: 'value',
+      key: 'metrics.traysPerMinute',
+      symbol: contractSymbols['metrics.traysPerMinute'].symbol,
+      value: mockValues.get('metrics.traysPerMinute'),
     });
   } else if (!adsConnected) {
     connectAds();

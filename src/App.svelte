@@ -10,7 +10,7 @@
 
   onMount(() => {
     for (const item of [...firstPassSymbols, ...writeTestSymbols]) {
-      subscribe(item.symbol, 250);
+      subscribe(item.key, 250);
     }
   });
 
@@ -21,9 +21,9 @@
     return JSON.stringify(value);
   }
 
-  function toggleBool(symbol) {
+  function toggleBool(item) {
     if (!writesEnabled) return;
-    write(symbol, !values[symbol]);
+    write(item.key, !values[item.key]);
   }
 
   function writeNumber(item) {
@@ -31,7 +31,7 @@
     const value = Number(numberDrafts[item.key]);
     if (Number.isFinite(value)) {
       const clamped = Math.min(item.max, Math.max(item.min, value));
-      write(item.symbol, clamped);
+      write(item.key, clamped);
     }
   }
 </script>
@@ -69,7 +69,7 @@
           <small>{item.symbol}</small>
         </div>
         <div class="group">{item.group}</div>
-        <div class="value">{formatValue(values[item.symbol])}</div>
+        <div class="value">{formatValue(values[item.key])}</div>
       </article>
     {/each}
   </section>
@@ -90,10 +90,10 @@
             <span>{item.label}</span>
             <small>{item.symbol}</small>
           </div>
-          <div class="value">{formatValue(values[item.symbol])}</div>
+          <div class="value">{formatValue(values[item.key])}</div>
 
           {#if item.type === 'boolean'}
-            <button type="button" disabled={!writesEnabled} onclick={() => toggleBool(item.symbol)}>
+            <button type="button" disabled={!writesEnabled} onclick={() => toggleBool(item)}>
               Toggle
             </button>
           {:else}

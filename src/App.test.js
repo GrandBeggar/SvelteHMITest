@@ -48,7 +48,7 @@ test('renders the commissioning panel and subscribes through the gateway store',
   await waitFor(() => expect(screen.getByText('Mock mode active')).toBeTruthy());
   expect(
     MockWebSocket.instances[0].sent.some(
-      (payload) => payload.type === 'subscribe' && payload.symbol === 'MAIN.bMachineIsInitialized',
+      (payload) => payload.type === 'subscribe' && payload.key === 'runtime.initialized',
     ),
   ).toBe(true);
 });

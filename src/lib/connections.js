@@ -1,95 +1,48 @@
-// First-pass symbol map for commissioning against the retrofit PLC.
-// These are existing symbols from the MultiFormPLC project, so the PLC does not
-// need temporary "test" tags for the rollout checks.
-export const conn = {
-  initialized: 'MAIN.bMachineIsInitialized',
-  controlPower: 'Inputs.bControlPower',
-  safetyOk: 'Inputs.bSafetyCircuitOK',
-  cycleSwitch: 'Inputs.bCycleSwitch',
-  startButton: 'Inputs.bStartButton',
-  hopperNotEmpty: 'Inputs.bHopperIsNotEmptyPE',
-  trayPicked: 'Inputs.bTrayPickedPE',
-  outfeedSensor: 'Inputs.bOutfeedSensor',
-  vacuumOut: 'MF.Coils.Vacuum.bOut',
-  outfeedConveyorOut: 'MF.Coils.OutfeedConveyor.bOut',
-  backStopsOut: 'MF.Coils.BackStops.bOut',
-  recipeMaxCount: 'C.nRECIPE_MAX_COUNT',
-  activeRecipe: 'MF.HMI.Recipe.nActiveIndex',
-  selectedRecipe: 'MF.HMI.Recipe.nSelectedIndex',
-  patternIndex: 'MF.HMI.nPatternIndex',
-  dryCycleEnable: 'MF.HMI.bDryCycleEnable',
-  trayCount: 'MF.Metrics.nTrayCount',
-  traysPerMinute: 'MF.Metrics.rTraysPerMinute',
-  traysLastMinute: 'MF.Metrics.nTraysLastMinute',
-  traysLastHour: 'MF.Metrics.nTraysLastHour',
-};
+// First-pass commissioning view over the machine contract. The browser sends
+// contract keys; the gateway is the only layer that resolves keys to ADS symbols.
+import contract from './machine-contract.json';
+import { buildContractIndex, numberBounds } from './contractRuntime.js';
+
+export const { symbols: contractSymbols } = buildContractIndex(contract);
+
+function readItem(key, label, group) {
+  const entry = contractSymbols[key];
+  return { key, label, symbol: entry.symbol, group };
+}
+
+function writeItem(key, label, type) {
+  const entry = contractSymbols[key];
+  return {
+    key,
+    label,
+    symbol: entry.symbol,
+    type,
+    ...numberBounds(contract, entry),
+  };
+}
 
 export const firstPassSymbols = [
-  { key: 'initialized', label: 'PLC Initialized', symbol: conn.initialized, group: 'Runtime' },
-  { key: 'controlPower', label: 'Control Power', symbol: conn.controlPower, group: 'Safety' },
-  { key: 'safetyOk', label: 'Safety OK', symbol: conn.safetyOk, group: 'Safety' },
-  { key: 'cycleSwitch', label: 'Cycle Switch', symbol: conn.cycleSwitch, group: 'Inputs' },
-  { key: 'startButton', label: 'Start Button', symbol: conn.startButton, group: 'Inputs' },
-  {
-    key: 'hopperNotEmpty',
-    label: 'Hopper Not Empty',
-    symbol: conn.hopperNotEmpty,
-    group: 'Inputs',
-  },
-  { key: 'trayPicked', label: 'Tray Picked PE', symbol: conn.trayPicked, group: 'Inputs' },
-  { key: 'outfeedSensor', label: 'Outfeed Sensor', symbol: conn.outfeedSensor, group: 'Inputs' },
-  { key: 'vacuumOut', label: 'Vacuum Output', symbol: conn.vacuumOut, group: 'Outputs' },
-  {
-    key: 'outfeedConveyorOut',
-    label: 'Outfeed Conveyor',
-    symbol: conn.outfeedConveyorOut,
-    group: 'Outputs',
-  },
-  { key: 'backStopsOut', label: 'Back Stops Output', symbol: conn.backStopsOut, group: 'Outputs' },
-  {
-    key: 'recipeMaxCount',
-    label: 'Recipe Max Count',
-    symbol: conn.recipeMaxCount,
-    group: 'Recipe',
-  },
-  { key: 'activeRecipe', label: 'Active Recipe', symbol: conn.activeRecipe, group: 'Recipe' },
-  { key: 'trayCount', label: 'Tray Count', symbol: conn.trayCount, group: 'Metrics' },
-  {
-    key: 'traysPerMinute',
-    label: 'Trays Per Minute',
-    symbol: conn.traysPerMinute,
-    group: 'Metrics',
-  },
-  {
-    key: 'traysLastMinute',
-    label: 'Trays Last Minute',
-    symbol: conn.traysLastMinute,
-    group: 'Metrics',
-  },
-  { key: 'traysLastHour', label: 'Trays Last Hour', symbol: conn.traysLastHour, group: 'Metrics' },
+  readItem('runtime.initialized', 'PLC Initialized', 'Runtime'),
+  readItem('safety.controlPower', 'Control Power', 'Safety'),
+  readItem('safety.circuitOk', 'Safety OK', 'Safety'),
+  readItem('input.cycleSwitch', 'Cycle Switch', 'Inputs'),
+  readItem('input.startButton', 'Start Button', 'Inputs'),
+  readItem('input.hopperNotEmpty', 'Hopper Not Empty', 'Inputs'),
+  readItem('input.trayPicked', 'Tray Picked PE', 'Inputs'),
+  readItem('input.outfeedSensor', 'Outfeed Sensor', 'Inputs'),
+  readItem('manual.coils.vacuum.out', 'Vacuum Output', 'Outputs'),
+  readItem('manual.coils.outfeedConveyor.out', 'Outfeed Conveyor', 'Outputs'),
+  readItem('manual.coils.backStops.out', 'Back Stops Output', 'Outputs'),
+  readItem('recipe.maxCount', 'Recipe Max Count', 'Recipe'),
+  readItem('recipe.activeIndex', 'Active Recipe', 'Recipe'),
+  readItem('metrics.trayCount', 'Tray Count', 'Metrics'),
+  readItem('metrics.traysPerMinute', 'Trays Per Minute', 'Metrics'),
+  readItem('metrics.traysLastMinute', 'Trays Last Minute', 'Metrics'),
+  readItem('metrics.traysLastHour', 'Trays Last Hour', 'Metrics'),
 ];
 
 export const writeTestSymbols = [
-  {
-    key: 'dryCycleEnable',
-    label: 'Dry Cycle Enable',
-    symbol: conn.dryCycleEnable,
-    type: 'boolean',
-  },
-  {
-    key: 'selectedRecipe',
-    label: 'Selected Recipe',
-    symbol: conn.selectedRecipe,
-    type: 'number',
-    min: 0,
-    max: 20,
-  },
-  {
-    key: 'patternIndex',
-    label: 'Pattern Index',
-    symbol: conn.patternIndex,
-    type: 'number',
-    min: 1,
-    max: 8,
-  },
+  writeItem('mode.dryCycleEnable', 'Dry Cycle Enable', 'boolean'),
+  writeItem('recipe.selectedIndex', 'Selected Recipe', 'number'),
+  writeItem('pattern.index', 'Pattern Index', 'number'),
 ];
