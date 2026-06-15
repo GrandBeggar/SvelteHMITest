@@ -1,0 +1,323 @@
+{
+  "version": 1,
+  "name": "SvelteHMI machine contract",
+  "primaryVariant": "1270",
+  "source": {
+    "decision": "docs/decisions/0004-machine-contract-source.md",
+    "variants": {
+      "1054": {
+        "plcRoot": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1054\\PLC",
+        "commit": "99f3c75c1a84cd167004a6324a30ce98db280e96",
+        "tmc": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1054\\PLC\\MultiFormPLC\\MultiFormPLC.tmc",
+        "tmcSha256": "4A0ED0DFE5DFC59BF587DCABFCCAAA84B0F8591D01437BE1913F4162A18CD49E"
+      },
+      "1270": {
+        "plcRoot": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1270\\PLC",
+        "commit": "ecc8d7ac6a2df960af7e599d5358a6ad7e69362f",
+        "tmc": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1270\\PLC\\MultiFormPLC\\MultiFormPLC.tmc",
+        "tmcSha256": "6052347721A7EEC0B1812314FB39AAEAC136E877669CBB0D290D5D262848C1CD"
+      },
+      "1336": {
+        "plcRoot": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1336\\PLC",
+        "commit": "9ff5ceae8a2be3f63337b26d6b0f30942a82abb2",
+        "tmc": "C:\\Dev\\TwinCAT\\KITA Ipak Retrofit\\KITA Ipak Retrofit 1336\\PLC\\MultiFormPLC\\MultiFormPLC.tmc",
+        "tmcSha256": "1E25A4A2BB524829E1E648BBA352D236FB9A4FABF815A15F1E4BA93E98E0D22E"
+      }
+    }
+  },
+  "constants": {
+    "patternCount": {
+      "symbol": "C.nPATTERN_COUNT",
+      "plcType": "UINT",
+      "value": 8
+    },
+    "recipeMaxCount": {
+      "symbol": "C.nRECIPE_MAX_COUNT",
+      "plcType": "UINT",
+      "value": 20
+    },
+    "recipeDefaultSlot": {
+      "symbol": "C.nRECIPE_DEFAULT_SLOT",
+      "plcType": "UINT",
+      "value": 1
+    }
+  },
+  "enums": {
+    "E_RecipeCommand": {
+      "None": 0,
+      "Load": 1,
+      "Save": 2,
+      "Discard": 3
+    },
+    "E_ForceMode": {
+      "Auto": 0,
+      "On": 1,
+      "Off": 2
+    },
+    "E_ForceStatus": {
+      "Inactive": 0,
+      "Active": 1,
+      "ForcedOn": 2,
+      "ForcedOff": 3
+    }
+  },
+  "symbols": {
+    "runtime.initialized": {
+      "symbol": "MAIN.bMachineIsInitialized",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview"],
+      "updateMs": 250,
+      "safetyLevel": "status",
+      "writeConfirmation": "none",
+      "mock": true
+    },
+    "safety.controlPower": {
+      "symbol": "Inputs.bControlPower",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "safety-observe",
+      "writeConfirmation": "none",
+      "mock": true
+    },
+    "safety.circuitOk": {
+      "symbol": "Inputs.bSafetyCircuitOK",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "safety-observe",
+      "writeConfirmation": "none",
+      "mock": true
+    },
+    "input.cycleSwitch": {
+      "symbol": "Inputs.bCycleSwitch",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "input-observe",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "input.startButton": {
+      "symbol": "Inputs.bStartButton",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "input-observe",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "input.hopperNotEmpty": {
+      "symbol": "Inputs.bHopperIsNotEmptyPE",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "input-observe",
+      "writeConfirmation": "none",
+      "mock": true
+    },
+    "input.trayPicked": {
+      "symbol": "Inputs.bTrayPickedPE",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "input-observe",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "input.outfeedSensor": {
+      "symbol": "Inputs.bOutfeedSensor",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "input-observe",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "recipe.maxCount": {
+      "symbol": "C.nRECIPE_MAX_COUNT",
+      "plcType": "UINT",
+      "access": "read",
+      "pages": ["recipe"],
+      "updateMs": 5000,
+      "safetyLevel": "constant",
+      "writeConfirmation": "none",
+      "mock": 20
+    },
+    "recipe.command": {
+      "symbol": "MF.HMI.Recipe.eCommand",
+      "plcType": "E_RecipeCommand",
+      "access": "write",
+      "pages": ["recipe"],
+      "updateMs": 0,
+      "safetyLevel": "retained-command",
+      "writeConfirmation": "recipe-active-index-or-unsaved-readback",
+      "mock": "None"
+    },
+    "recipe.selectedIndex": {
+      "symbol": "MF.HMI.Recipe.nSelectedIndex",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "retained-command",
+      "writeConfirmation": "paired-recipe-command",
+      "bounds": {
+        "min": 0,
+        "maxConstant": "recipeMaxCount"
+      },
+      "mock": 1
+    },
+    "recipe.activeIndex": {
+      "symbol": "MF.HMI.Recipe.nActiveIndex",
+      "plcType": "UINT",
+      "access": "read",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "operator-state",
+      "writeConfirmation": "none",
+      "mock": 1
+    },
+    "recipe.hasUnsavedChanges": {
+      "symbol": "MF.HMI.Recipe.bHasUnsavedChanges",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "operator-state",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "pattern.index": {
+      "symbol": "MF.HMI.nPatternIndex",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "retained-operator-state",
+      "writeConfirmation": "readback",
+      "bounds": {
+        "min": 1,
+        "maxConstant": "patternCount"
+      },
+      "mock": 1
+    },
+    "mode.dryCycleEnable": {
+      "symbol": "MF.HMI.bDryCycleEnable",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "retained-operator-state",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "metrics.trayCount": {
+      "symbol": "MF.Metrics.nTrayCount",
+      "plcType": "UDINT",
+      "access": "read",
+      "pages": ["overview"],
+      "updateMs": 1000,
+      "safetyLevel": "metric",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "metrics.lastCycleTimeMs": {
+      "symbol": "MF.Metrics.nLastCycleTimeMs",
+      "plcType": "UDINT",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 1000,
+      "safetyLevel": "metric",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "metrics.traysPerMinute": {
+      "symbol": "MF.Metrics.rTraysPerMinute",
+      "plcType": "REAL",
+      "access": "read",
+      "pages": ["overview"],
+      "updateMs": 1000,
+      "safetyLevel": "metric",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "metrics.traysLastMinute": {
+      "symbol": "MF.Metrics.nTraysLastMinute",
+      "plcType": "UDINT",
+      "access": "read",
+      "pages": ["overview"],
+      "updateMs": 1000,
+      "safetyLevel": "metric",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "metrics.traysLastHour": {
+      "symbol": "MF.Metrics.nTraysLastHour",
+      "plcType": "UDINT",
+      "access": "read",
+      "pages": ["overview"],
+      "updateMs": 1000,
+      "safetyLevel": "metric",
+      "writeConfirmation": "none",
+      "mock": 0
+    }
+  },
+  "coilNames": [
+    "Vacuum",
+    "MotorForward",
+    "MotorReverse",
+    "OutfeedConveyor",
+    "BackStops",
+    "BottomStops",
+    "Rotary",
+    "SideAlign",
+    "Compression",
+    "GlueLH1",
+    "GlueRH1",
+    "GlueLH2",
+    "GlueRH2",
+    "GlueLH3",
+    "GlueRH3"
+  ],
+  "coilTemplate": {
+    "readbackOut": {
+      "symbolPattern": "MF.Coils.{coil}.bOut",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "physical-output-readback",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "readbackStatus": {
+      "symbolPattern": "MF.Coils.{coil}.eStatus",
+      "plcType": "E_ForceStatus",
+      "access": "read",
+      "pages": ["diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "force-status-readback",
+      "writeConfirmation": "none",
+      "mock": "Inactive"
+    },
+    "force": {
+      "symbolPattern": "MF.Coils.{coil}.eForce",
+      "plcType": "E_ForceMode",
+      "access": "write",
+      "pages": ["diagnostics"],
+      "updateMs": 0,
+      "safetyLevel": "hazard-force",
+      "writeConfirmation": "readback-bOut-eStatus",
+      "mock": "Auto"
+    }
+  }
+}
