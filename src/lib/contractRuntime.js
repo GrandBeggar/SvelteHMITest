@@ -113,7 +113,7 @@ function coerceContractValue(contract, entry, value) {
 }
 
 function mockValueFor(entry) {
-  if (entry.mock !== undefined && entry.mock !== true) return entry.mock;
+  if (entry.mock !== undefined) return entry.mock;
   if (entry.plcType === 'BOOL') return false;
   if (['INT', 'UINT', 'UDINT', 'REAL'].includes(entry.plcType)) return 0;
   return null;

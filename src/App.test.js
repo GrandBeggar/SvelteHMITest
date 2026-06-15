@@ -28,12 +28,15 @@ beforeEach(() => {
   vi.stubGlobal('WebSocket', MockWebSocket);
 });
 
-test('renders the commissioning panel and subscribes through the gateway store', async () => {
+test('renders the HMI shell and subscribes through contract keys', async () => {
   const { default: App } = await import('./App.svelte');
 
   render(App);
 
   expect(screen.getByText('SvelteHMI')).toBeTruthy();
+  expect(screen.getByRole('navigation', { name: 'HMI views' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Overview' })).toBeTruthy();
+  expect(screen.getByText('Run Screen')).toBeTruthy();
 
   await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
   await waitFor(() => expect(MockWebSocket.instances[0].sent.length).toBeGreaterThan(0));
@@ -46,6 +49,14 @@ test('renders the commissioning panel and subscribes through the gateway store',
   });
 
   await waitFor(() => expect(screen.getByText('Mock mode active')).toBeTruthy());
+  MockWebSocket.instances[0].receive({
+    type: 'status',
+    ads: false,
+    mode: 'ads',
+    message: 'ADS disconnected',
+  });
+  await waitFor(() => expect(screen.getByText('ADS disconnected')).toBeTruthy());
+  expect(screen.getAllByText('ADS offline').length).toBeGreaterThan(0);
   expect(
     MockWebSocket.instances[0].sent.some(
       (payload) => payload.type === 'subscribe' && payload.key === 'runtime.initialized',
