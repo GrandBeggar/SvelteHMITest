@@ -248,6 +248,41 @@ This phase should not disturb the existing TF1200/TF2000 path. Run the SvelteHMI
 
    These are not motion outputs, but they can still change retained HMI/operator state. Record their original values before writing so they can be restored immediately.
 
+### First Site Test Result
+
+The first CX9240 field test proved the full browser-to-PLC path while the machine continued running:
+
+- Mock mode served from the CX on port `3001`.
+- Laptop browser reached the CX web server after opening `tcp dport 3001` in nftables.
+- ADS mode connected using the LAN route identity `192.168.1.100.1.1` to target AMS NetId `5.168.37.183.1.1`, PLC runtime port `851`.
+- Read/subscribe values populated through the SvelteHMI gateway.
+- Guarded write test succeeded by changing `MF.HMI.nPatternIndex` from `2` to `1`.
+- Existing TF1200/TF2000 operation and machine running were not impacted during testing.
+
+Cleanup note for the next visit: remove the temporary incorrect loopback route that was added during diagnosis if it is still present in `/etc/TwinCAT/3.1/Target/StaticRoutes.xml`:
+
+```xml
+<Route>
+        <Name>LocalNodeGateway</Name>
+        <Address>127.0.0.1</Address>
+        <NetId>127.0.0.1.1.1</NetId>
+        <Type>TCP_IP</Type>
+        <Flags>0</Flags>
+</Route>
+```
+
+Keep the working LAN route unless the ADS strategy changes:
+
+```xml
+<Route>
+        <Name>LocalNodeGatewayLan</Name>
+        <Address>192.168.1.100</Address>
+        <NetId>192.168.1.100.1.1</NetId>
+        <Type>TCP_IP</Type>
+        <Flags>0</Flags>
+</Route>
+```
+
 ## Phase 3: TF1200 Kiosk Test
 
 Keep TF2000 installed and reversible for this test.
