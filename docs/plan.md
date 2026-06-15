@@ -97,8 +97,8 @@ Brief:
 DoD:
 - A machine contract file exists in the repo, either generated or manually curated.
 - The contract contains no direct duplicate symbol names with conflicting type/direction metadata.
-- A contract validation script exists and passes against the contract.
-- The validation script compares the contract against the pinned `MultiFormPLC.tmc` artifact from decision 0004.
+- A contract validation script exists and passes against the contract, running hermetically against repo-committed fixtures only.
+- The committed gate does not read live PLC directories or require the pinned `MultiFormPLC.tmc` on disk; any contract-vs-artifact check uses a committed copy or symbol export (see decision 0007). Live PLC/ADS validation is deferred to operator-led app testing.
 - Direction is derived from PLC source/artifact metadata, not guessed from HMI naming.
 - Validator rejects marking any `AT %I*` symbol writable, including the known trap `ST_HMI.bStepEnable`.
 - Contract captures PLC scalar/enum types such as `BOOL`, `INT`, `UINT`, `UDINT`, `REAL`, `E_RecipeCommand`, `E_ForceMode`, and `E_ForceStatus`.
@@ -106,7 +106,7 @@ DoD:
 - At least the already-proven symbols from `src/lib/connections.js` are represented.
 - Recipe command symbols `MF.HMI.Recipe.eCommand`, `MF.HMI.Recipe.nSelectedIndex`, `MF.HMI.Recipe.nActiveIndex`, and `MF.HMI.Recipe.bHasUnsavedChanges` are represented with correct direction.
 - Coil symbols are represented as readback via `MF.Coils.<coil>.bOut` / `MF.Coils.<coil>.eStatus` and force writes via `MF.Coils.<coil>.eForce`.
-- Auditor verifies at least one live/captured PLC symbol proof is used, not only mock data.
+- Auditor verifies at least one captured PLC symbol proof (committed fixture) is used, not only mock data; live ADS proof is deferred to operator-led app testing per decision 0007.
 
 ## Phase: Gateway Contract Layer
 
