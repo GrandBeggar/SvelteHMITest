@@ -16,8 +16,12 @@ Open `http://localhost:3001`. On the CX9240, use `http://192.168.1.100:3001` fro
 
 ```powershell
 $env:HMI_MODE="ads"
-$env:ADS_TARGET_AMS="127.0.0.1.1.1"
+$env:ADS_TARGET_AMS="5.168.37.183.1.1"
 $env:ADS_TARGET_PORT="851"
+$env:ADS_ROUTER_ADDRESS="192.168.1.100"
+$env:ADS_LOCAL_ADDRESS="192.168.1.100"
+$env:ADS_LOCAL_AMS="192.168.1.100.1.1"
+$env:ADS_LOCAL_PORT="32750"
 npm run serve
 ```
 
@@ -26,6 +30,7 @@ Useful optional settings:
 - `PORT`: HTTP/WebSocket server port, default `3001`
 - `ADS_ROUTER_ADDRESS`: router or PLC IP when not connecting locally
 - `ADS_ROUTER_TCP_PORT`: ADS router TCP port, default from `ads-client`
+- `ADS_LOCAL_ADDRESS`: local network interface address for the outgoing ADS socket
 - `ADS_LOCAL_AMS`: local AMS NetId when connecting without a local router
 - `ADS_LOCAL_PORT`: local ADS port
 - `ADS_TIMEOUT_MS`: ADS command timeout, default `5000`
@@ -67,7 +72,15 @@ HMI_MODE=mock PORT=3001 node server.js
 Then switch to ADS mode:
 
 ```sh
-HMI_MODE=ads ADS_TARGET_AMS=127.0.0.1.1.1 ADS_TARGET_PORT=851 PORT=3001 node server.js
+HMI_MODE=ads \
+ADS_TARGET_AMS=5.168.37.183.1.1 \
+ADS_TARGET_PORT=851 \
+ADS_ROUTER_ADDRESS=192.168.1.100 \
+ADS_LOCAL_ADDRESS=192.168.1.100 \
+ADS_LOCAL_AMS=192.168.1.100.1.1 \
+ADS_LOCAL_PORT=32750 \
+PORT=3001 \
+node server.js
 ```
 
 ## Current Intent

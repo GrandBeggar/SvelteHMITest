@@ -15,6 +15,7 @@ const ADS_CONFIG = {
   targetAdsPort: Number(process.env.ADS_TARGET_PORT ?? 851),
   routerAddress: process.env.ADS_ROUTER_ADDRESS,
   routerTcpPort: process.env.ADS_ROUTER_TCP_PORT ? Number(process.env.ADS_ROUTER_TCP_PORT) : undefined,
+  localAddress: process.env.ADS_LOCAL_ADDRESS,
   localAmsNetId: process.env.ADS_LOCAL_AMS,
   localAdsPort: process.env.ADS_LOCAL_PORT ? Number(process.env.ADS_LOCAL_PORT) : undefined,
   timeoutDelay: Number(process.env.ADS_TIMEOUT_MS ?? 5000),
@@ -193,6 +194,7 @@ async function connectAds() {
     adsConnected = false;
     subscriptions.clear();
     statusMessage = `ADS connect failed: ${error.message}`;
+    console.error(statusMessage);
     broadcast(statusPayload());
   } finally {
     connectingPromise = undefined;

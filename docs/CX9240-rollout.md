@@ -208,8 +208,12 @@ This phase should not disturb the existing TF1200/TF2000 path. Run the SvelteHMI
 
    ```sh
    HMI_MODE=ads \
-   ADS_TARGET_AMS=127.0.0.1.1.1 \
+   ADS_TARGET_AMS=5.168.37.183.1.1 \
    ADS_TARGET_PORT=851 \
+   ADS_ROUTER_ADDRESS=192.168.1.100 \
+   ADS_LOCAL_ADDRESS=192.168.1.100 \
+   ADS_LOCAL_AMS=192.168.1.100.1.1 \
+   ADS_LOCAL_PORT=32750 \
    PORT=3001 \
    node server.js
    ```
@@ -219,7 +223,20 @@ This phase should not disturb the existing TF1200/TF2000 path. Run the SvelteHMI
 4. If ADS does not connect, check:
 
    - PLC runtime is in RUN.
-   - The target AMS NetId matches the local runtime.
+   - The target AMS NetId matches the local runtime. On the first CX9240 rollout unit, TwinCAT Shell reported `5.168.37.183.1.1`.
+   - `/etc/TwinCAT/3.1/Target/StaticRoutes.xml` contains a non-secure local Node route for the CX LAN identity:
+
+     ```xml
+     <Route>
+             <Name>LocalNodeGatewayLan</Name>
+             <Address>192.168.1.100</Address>
+             <NetId>192.168.1.100.1.1</NetId>
+             <Type>TCP_IP</Type>
+             <Flags>0</Flags>
+     </Route>
+     ```
+
+     Reload routes with TwinCAT Config -> Run or `sudo systemctl restart TcSystemServiceUm` while the machine is in a safe state.
    - The PLC exposes the retrofit symbols listed in `src/lib/connections.js`.
    - Secure ADS requirements for this runtime. `ads-client` exposes standard AMS/TCP settings; secure ADS may require a different route/auth strategy.
 

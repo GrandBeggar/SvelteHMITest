@@ -10,8 +10,12 @@ WorkingDirectory=/opt/sveltehmi
 Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=HMI_MODE=ads
-Environment=ADS_TARGET_AMS=127.0.0.1.1.1
+Environment=ADS_TARGET_AMS=5.168.37.183.1.1
 Environment=ADS_TARGET_PORT=851
+Environment=ADS_ROUTER_ADDRESS=192.168.1.100
+Environment=ADS_LOCAL_ADDRESS=192.168.1.100
+Environment=ADS_LOCAL_AMS=192.168.1.100.1.1
+Environment=ADS_LOCAL_PORT=32750
 ExecStart=/usr/bin/node /opt/sveltehmi/server.js
 Restart=always
 RestartSec=3
