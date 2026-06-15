@@ -6,17 +6,16 @@
   import Gauge from '@lucide/svelte/icons/gauge';
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
   import Network from '@lucide/svelte/icons/network';
-  import PanelTop from '@lucide/svelte/icons/panel-top';
-  import ShieldCheck from '@lucide/svelte/icons/shield-check';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   import Wifi from '@lucide/svelte/icons/wifi';
   import WifiOff from '@lucide/svelte/icons/wifi-off';
   import Wrench from '@lucide/svelte/icons/wrench';
   import ParamInput from '$lib/components/ParamInput.svelte';
   import ParamRow from '$lib/components/ParamRow.svelte';
+  import SensorChip from '$lib/components/SensorChip.svelte';
   import StateMachineChip from '$lib/components/StateMachineChip.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
-  import { firstPassSymbols } from '$lib/connections.js';
+  import ValueDisplay from '$lib/components/ValueDisplay.svelte';
   import { getStatus, getValues, subscribe } from '$lib/adsStore.svelte.js';
 
   const status = getStatus();
@@ -28,52 +27,79 @@
     { id: 'events', label: 'Events', icon: Bell },
   ];
   const subscriptions = [
-    ...new Set([
-      ...firstPassSymbols.map((item) => item.key),
-      'recipe.selectedIndex',
-      'pattern.index',
-      'mode.dryCycleEnable',
-      'metrics.lastCycleTimeMs',
-    ]),
+    'runtime.initialized',
+    'safety.controlPower',
+    'safety.circuitOk',
+    'input.cycleSwitch',
+    'input.startButton',
+    'input.hopperNotEmpty',
+    'input.trayPicked',
+    'input.outfeedSensor',
+    'recipe.activeIndex',
+    'recipe.selectedIndex',
+    'pattern.index',
+    'mode.dryCycleEnable',
+    'metrics.trayCount',
+    'metrics.lastCycleTimeMs',
+    'metrics.traysPerMinute',
+    'metrics.traysLastMinute',
+    'metrics.traysLastHour',
   ];
-  const overviewRows = [
-    { key: 'runtime.initialized', label: 'PLC initialized', group: 'Runtime' },
-    { key: 'safety.controlPower', label: 'Control power', group: 'Safety' },
-    { key: 'safety.circuitOk', label: 'Safety circuit', group: 'Safety' },
-    { key: 'input.cycleSwitch', label: 'Cycle switch', group: 'Operator' },
-    { key: 'input.startButton', label: 'Start button', group: 'Operator' },
-    { key: 'input.hopperNotEmpty', label: 'Hopper stock', group: 'Material' },
-    { key: 'input.trayPicked', label: 'Tray picked', group: 'Material' },
-    { key: 'input.outfeedSensor', label: 'Outfeed sensor', group: 'Outfeed' },
-  ];
-  const metrics = [
-    { key: 'metrics.trayCount', label: 'Tray count', unit: '' },
-    { key: 'metrics.traysPerMinute', label: 'Trays/min', unit: '' },
-    { key: 'metrics.traysLastMinute', label: 'Last minute', unit: '' },
-    { key: 'metrics.traysLastHour', label: 'Last hour', unit: '' },
-  ];
-  const machineStateCards = [
+  const machineStates = [
+    { key: 'runtime.initialized', label: 'PLC initialized', activeLabel: 'Ready' },
     {
-      key: 'recipe.activeIndex',
-      label: 'Active recipe',
-      icon: PanelTop,
+      key: 'input.cycleSwitch',
+      label: 'Cycle switch',
+      activeLabel: 'Active',
+      inactiveLabel: 'Idle',
     },
     {
-      key: 'recipe.selectedIndex',
-      label: 'Selected recipe',
-      icon: SlidersHorizontal,
-    },
-    {
-      key: 'pattern.index',
-      label: 'Pattern',
-      icon: Gauge,
+      key: 'input.startButton',
+      label: 'Start button',
+      activeLabel: 'Pressed',
+      inactiveLabel: 'Idle',
     },
     {
       key: 'mode.dryCycleEnable',
       label: 'Dry cycle',
-      icon: Activity,
-      booleanText: ['Disabled', 'Enabled'],
+      activeLabel: 'Enabled',
+      inactiveLabel: 'Disabled',
     },
+    {
+      key: 'input.hopperNotEmpty',
+      label: 'Hopper status',
+      activeLabel: 'Stock',
+      inactiveLabel: 'Empty',
+    },
+  ];
+  const safetyStates = [
+    { key: 'safety.controlPower', label: 'Control power', activeLabel: 'On', inactiveLabel: 'Off' },
+    { key: 'safety.circuitOk', label: 'Safety circuit', activeLabel: 'OK', inactiveLabel: 'Open' },
+  ];
+  const materialStates = [
+    {
+      key: 'input.trayPicked',
+      label: 'Tray picked',
+      activeLabel: 'Picked',
+      inactiveLabel: 'Clear',
+    },
+    {
+      key: 'input.outfeedSensor',
+      label: 'Outfeed sensor',
+      activeLabel: 'Blocked',
+      inactiveLabel: 'Clear',
+    },
+  ];
+  const runReadouts = [
+    { key: 'recipe.activeIndex', label: 'Active recipe' },
+    { key: 'recipe.selectedIndex', label: 'Selected recipe' },
+    { key: 'pattern.index', label: 'Pattern' },
+    { key: 'metrics.lastCycleTimeMs', label: 'Last cycle', unit: 'ms' },
+  ];
+  const performanceReadouts = [
+    { key: 'metrics.traysLastMinute', label: 'Trays this min' },
+    { key: 'metrics.traysLastHour', label: 'Trays this hour' },
+    { key: 'metrics.trayCount', label: 'Trays total' },
   ];
 
   let activeView = $state('overview');
@@ -92,12 +118,6 @@
     if (typeof value === 'number')
       return Number.isInteger(value) ? String(value) : value.toFixed(2);
     return String(value);
-  }
-
-  function booleanState(key) {
-    const value = values[key];
-    if (value === undefined || value === null) return 'unknown';
-    return value ? 'true' : 'false';
   }
 
   function readinessText() {
@@ -121,6 +141,30 @@
 
   function connectionOnline() {
     return status.gateway && (status.ads || status.mode === 'mock');
+  }
+
+  function valueQuality(key) {
+    if (values[key] === undefined || values[key] === null) return 'unknown';
+    return connectionOnline() ? 'live' : 'stale';
+  }
+
+  function groupTone(keys, dangerOnFalse = false) {
+    if (keys.some((key) => valueQuality(key) === 'unknown')) return 'waiting';
+    if (keys.some((key) => valueQuality(key) === 'stale')) return 'paused';
+    if (dangerOnFalse && keys.some((key) => !values[key])) return 'faulted';
+    return keys.every((key) => Boolean(values[key])) ? 'running' : 'inactive';
+  }
+
+  function headlineText() {
+    if (!connectionOnline()) return 'Connection Hold';
+    if (readinessText() === 'Ready') return 'Machine Ready';
+    return 'Machine Hold';
+  }
+
+  function headlineDetail() {
+    if (!connectionOnline()) return 'Showing stale or unknown values';
+    if (readinessText() === 'Ready') return 'Press Button to Begin Cycling';
+    return readinessText();
   }
 </script>
 
@@ -180,66 +224,131 @@
       </div>
 
       {#if activeView === 'overview'}
-        <section class="overview-layout">
-          <div class="run-summary">
-            <div class="summary-copy">
+        <section class="overview-layout" aria-label="Overview run screen">
+          <section class="run-banner {readinessTone()}" aria-labelledby="run-screen-title">
+            <div>
               <span class="eyebrow">Overview</span>
-              <h2>Run Screen</h2>
-              <p>{readinessText()}</p>
-              <div class="summary-chips" aria-label="Machine states">
-                <StateMachineChip state={readinessTone() === 'ready' ? 4 : 3} />
-                <StateMachineChip state={values['mode.dryCycleEnable'] ? 5 : 0} />
-              </div>
+              <h2 id="run-screen-title">Run Screen</h2>
             </div>
-
-            <div class="readiness-meter {readinessTone()}">
-              <ShieldCheck size={34} />
-              <strong>{readinessText()}</strong>
-              <span>{formatValue(values['runtime.initialized'], 'PLC state unknown')}</span>
+            <div class="run-banner-state">
+              <strong>{headlineText()}</strong>
+              <span>{headlineDetail()}</span>
             </div>
-          </div>
+          </section>
 
-          <section class="machine-state">
-            {#each machineStateCards as card}
-              <article class="state-card">
-                <div>
-                  <card.icon size={22} />
-                  <span>{card.label}</span>
-                </div>
-                <strong>
-                  {#if card.booleanText}
-                    {values[card.key] ? card.booleanText[1] : card.booleanText[0]}
-                  {:else}
-                    {formatValue(values[card.key])}
-                  {/if}
-                </strong>
-              </article>
+          <section class="run-readouts" aria-label="Run setpoints and counters">
+            {#each runReadouts as readout}
+              <ValueDisplay
+                label={readout.label}
+                value={values[readout.key]}
+                unit={readout.unit}
+                quality={valueQuality(readout.key)}
+              />
             {/each}
           </section>
 
-          <section class="sensor-board">
-            {#each overviewRows as row}
-              <article class="sensor-row" data-state={booleanState(row.key)}>
-                <div>
-                  <span>{row.label}</span>
-                  <small>{row.group}</small>
-                </div>
-                <strong>{formatValue(values[row.key])}</strong>
-              </article>
-            {/each}
+          <section class="run-group state-{groupTone(machineStates.map((item) => item.key))}">
+            <span class="run-group-label">Machine States</span>
+            <div class="run-group-pocket">
+              {#each machineStates as item}
+                <SensorChip
+                  label={item.label}
+                  value={values[item.key]}
+                  quality={valueQuality(item.key)}
+                  activeLabel={item.activeLabel}
+                  inactiveLabel={item.inactiveLabel}
+                />
+              {/each}
+            </div>
           </section>
 
-          <section class="metric-board">
-            {#each metrics as metric}
-              <article class="metric">
-                <span>{metric.label}</span>
-                <strong>{formatValue(values[metric.key])}{metric.unit}</strong>
-              </article>
-            {/each}
-            <article class="metric">
-              <span>Last cycle ms</span>
-              <strong>{formatValue(values['metrics.lastCycleTimeMs'])}</strong>
-            </article>
+          <section
+            class="run-group state-{groupTone(
+              safetyStates.map((item) => item.key),
+              true,
+            )}"
+          >
+            <span class="run-group-label">Safety</span>
+            <div class="run-group-pocket">
+              {#each safetyStates as item}
+                <SensorChip
+                  label={item.label}
+                  value={values[item.key]}
+                  quality={valueQuality(item.key)}
+                  activeLabel={item.activeLabel}
+                  inactiveLabel={item.inactiveLabel}
+                />
+              {/each}
+            </div>
+          </section>
+
+          <section class="run-group state-{groupTone(materialStates.map((item) => item.key))}">
+            <span class="run-group-label">Material</span>
+            <div class="run-group-pocket">
+              {#each materialStates as item}
+                <SensorChip
+                  label={item.label}
+                  value={values[item.key]}
+                  quality={valueQuality(item.key)}
+                  activeLabel={item.activeLabel}
+                  inactiveLabel={item.inactiveLabel}
+                />
+              {/each}
+            </div>
+          </section>
+
+          <section class="performance">
+            <span class="performance-label">Performance</span>
+            <div class="performance-values">
+              {#each performanceReadouts as readout}
+                <ValueDisplay
+                  label={readout.label}
+                  value={values[readout.key]}
+                  quality={valueQuality(readout.key)}
+                />
+              {/each}
+              <ValueDisplay
+                label="Trays/min"
+                value={values['metrics.traysPerMinute']}
+                unit="TPM"
+                quality={valueQuality('metrics.traysPerMinute')}
+              />
+            </div>
+          </section>
+
+          <section class="run-footer" aria-label="Run status">
+            <StatusBanner
+              online={connectionOnline()}
+              label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+              detail={status.message}
+            />
+            <div class="footer-chips">
+              <StateMachineChip
+                label={headlineText()}
+                state={readinessTone() === 'ready' ? 4 : 5}
+              />
+              <StateMachineChip
+                label={formatValue(values['input.hopperNotEmpty'], 'Hopper Unknown')}
+                state={valueQuality('input.hopperNotEmpty') === 'live' &&
+                values['input.hopperNotEmpty']
+                  ? 4
+                  : valueQuality('input.hopperNotEmpty') === 'stale'
+                    ? 5
+                    : 1}
+              />
+              <StateMachineChip
+                label={formatValue(values['input.trayPicked'], 'Tray Unknown')}
+                state={valueQuality('input.trayPicked') === 'live' && values['input.trayPicked']
+                  ? 4
+                  : 1}
+              />
+              <ValueDisplay
+                label="Rate"
+                value={values['metrics.traysPerMinute']}
+                unit="TPM"
+                quality={valueQuality('metrics.traysPerMinute')}
+              />
+            </div>
           </section>
         </section>
       {:else}

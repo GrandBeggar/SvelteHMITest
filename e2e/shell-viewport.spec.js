@@ -26,6 +26,11 @@ for (const viewport of viewports) {
 
     await expect(page.getByRole('heading', { name: 'Run Screen' })).toBeVisible();
     await expect(page.getByText('SvelteHMI')).toBeVisible();
+    await expect(page.getByText('Machine States')).toBeVisible();
+    await expect(page.getByText('Safety', { exact: true })).toBeVisible();
+    await expect(page.getByText('Material', { exact: true })).toBeVisible();
+    await expect(page.getByText('Performance', { exact: true })).toBeVisible();
+    await expect(page.locator('.run-banner-state').getByText('Machine Ready')).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: 'Recipe' }).click();
