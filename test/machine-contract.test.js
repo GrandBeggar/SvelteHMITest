@@ -16,8 +16,22 @@ describe('machine contract validator', () => {
     ).toBe(45);
   });
 
-  test('passes against pinned PLC source and TMC artifacts', () => {
+  test('passes against the committed PLC symbol-proof fixture', () => {
     const result = validateContract(contract);
+
+    expect(result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  test('does not read live PLC source paths during committed validation', () => {
+    const hermeticContract = structuredClone(contract);
+
+    for (const variant of Object.values(hermeticContract.source.variants)) {
+      variant.plcRoot = 'Z:\\not-a-real-plc-source';
+      variant.tmc = 'Z:\\not-a-real-symbol-table.tmc';
+    }
+
+    const result = validateContract(hermeticContract);
 
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);

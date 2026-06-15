@@ -1,0 +1,558 @@
+{
+  "version": 1,
+  "source": {
+    "decision": "docs/decisions/0004-machine-contract-source.md",
+    "fixturePolicy": "docs/decisions/0007-contract-validation-not-gate-coupled.md",
+    "variant": "1270",
+    "commit": "ecc8d7ac6a2df960af7e599d5358a6ad7e69362f",
+    "tmcSha256": "6052347721A7EEC0B1812314FB39AAEAC136E877669CBB0D290D5D262848C1CD",
+    "note": "Generated from the pinned 1270 MultiFormPLC.tmc and PLC source facts as a hermetic contract-validation fixture."
+  },
+  "facts": {
+    "atInput": [
+      "Inputs.bControlPower",
+      "Inputs.bCycleSwitch",
+      "Inputs.bDownstreamSensor",
+      "Inputs.bGlueSafetySwitch",
+      "Inputs.bHopperIsNotEmptyPE",
+      "Inputs.bJogForwardSwitch",
+      "Inputs.bJogReverseSwitch",
+      "Inputs.bOutfeedSensor",
+      "Inputs.bRamSwitch1",
+      "Inputs.bRamSwitch2",
+      "Inputs.bSafetyCircuitOK",
+      "Inputs.bStartButton",
+      "Inputs.bStepButton",
+      "Inputs.bTrayPickedPE",
+      "Inputs.bVaccumOnSwitch",
+      "MF.HMI.bStepEnable"
+    ],
+    "atOutput": [
+      "FB_Coil.bOut",
+      "MF.Coils.BackStops.bOut",
+      "MF.Coils.BottomStops.bOut",
+      "MF.Coils.Compression.bOut",
+      "MF.Coils.GlueLH1.bOut",
+      "MF.Coils.GlueLH2.bOut",
+      "MF.Coils.GlueLH3.bOut",
+      "MF.Coils.GlueRH1.bOut",
+      "MF.Coils.GlueRH2.bOut",
+      "MF.Coils.GlueRH3.bOut",
+      "MF.Coils.MotorForward.bOut",
+      "MF.Coils.MotorReverse.bOut",
+      "MF.Coils.OutfeedConveyor.bOut",
+      "MF.Coils.Rotary.bOut",
+      "MF.Coils.SideAlign.bOut",
+      "MF.Coils.Vacuum.bOut"
+    ],
+    "constants": {
+      "C.nLONG_PRESS_DELAY": {
+        "plcType": "UINT",
+        "value": 1000
+      },
+      "C.nPATTERN_COUNT": {
+        "plcType": "UINT",
+        "value": 8
+      },
+      "C.nRECIPE_DEFAULT_SLOT": {
+        "plcType": "UINT",
+        "value": 1
+      },
+      "C.nRECIPE_MAX_COUNT": {
+        "plcType": "UINT",
+        "value": 20
+      }
+    },
+    "recipeDirection": {
+      "MF.HMI.Recipe.bHasUnsavedChanges": "read",
+      "MF.HMI.Recipe.eCommand": "write",
+      "MF.HMI.Recipe.nActiveIndex": "read",
+      "MF.HMI.Recipe.nSelectedIndex": "write"
+    },
+    "hmiRetainWritable": [
+      "MF.HMI.bDryCycleEnable",
+      "MF.HMI.nPatternIndex",
+      "MF.HMI.nPatternIndexLast"
+    ],
+    "coilNames": [
+      "Vacuum",
+      "MotorForward",
+      "MotorReverse",
+      "OutfeedConveyor",
+      "BackStops",
+      "BottomStops",
+      "Rotary",
+      "SideAlign",
+      "Compression",
+      "GlueLH1",
+      "GlueRH1",
+      "GlueLH2",
+      "GlueRH2",
+      "GlueLH3",
+      "GlueRH3"
+    ]
+  },
+  "tmc": {
+    "symbols": {
+      "C.nRECIPE_MAX_COUNT": {
+        "symbol": "C.nRECIPE_MAX_COUNT",
+        "plcType": "UINT",
+        "areaType": "Internal",
+        "source": "data-area"
+      },
+      "Inputs.bControlPower": {
+        "symbol": "Inputs.bControlPower",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bCycleSwitch": {
+        "symbol": "Inputs.bCycleSwitch",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bHopperIsNotEmptyPE": {
+        "symbol": "Inputs.bHopperIsNotEmptyPE",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bOutfeedSensor": {
+        "symbol": "Inputs.bOutfeedSensor",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bSafetyCircuitOK": {
+        "symbol": "Inputs.bSafetyCircuitOK",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bStartButton": {
+        "symbol": "Inputs.bStartButton",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "Inputs.bTrayPickedPE": {
+        "symbol": "Inputs.bTrayPickedPE",
+        "plcType": "BOOL",
+        "areaType": "InputDst",
+        "source": "data-area"
+      },
+      "MAIN.bMachineIsInitialized": {
+        "symbol": "MAIN.bMachineIsInitialized",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "source": "data-area"
+      },
+      "MF.Coils.BackStops.bOut": {
+        "symbol": "MF.Coils.BackStops.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.BackStops.eForce": {
+        "symbol": "MF.Coils.BackStops.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.BackStops.eStatus": {
+        "symbol": "MF.Coils.BackStops.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.BottomStops.bOut": {
+        "symbol": "MF.Coils.BottomStops.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.BottomStops.eForce": {
+        "symbol": "MF.Coils.BottomStops.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.BottomStops.eStatus": {
+        "symbol": "MF.Coils.BottomStops.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.Compression.bOut": {
+        "symbol": "MF.Coils.Compression.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.Compression.eForce": {
+        "symbol": "MF.Coils.Compression.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.Compression.eStatus": {
+        "symbol": "MF.Coils.Compression.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH1.bOut": {
+        "symbol": "MF.Coils.GlueLH1.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueLH1.eForce": {
+        "symbol": "MF.Coils.GlueLH1.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH1.eStatus": {
+        "symbol": "MF.Coils.GlueLH1.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH2.bOut": {
+        "symbol": "MF.Coils.GlueLH2.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueLH2.eForce": {
+        "symbol": "MF.Coils.GlueLH2.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH2.eStatus": {
+        "symbol": "MF.Coils.GlueLH2.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH3.bOut": {
+        "symbol": "MF.Coils.GlueLH3.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueLH3.eForce": {
+        "symbol": "MF.Coils.GlueLH3.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueLH3.eStatus": {
+        "symbol": "MF.Coils.GlueLH3.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH1.bOut": {
+        "symbol": "MF.Coils.GlueRH1.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueRH1.eForce": {
+        "symbol": "MF.Coils.GlueRH1.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH1.eStatus": {
+        "symbol": "MF.Coils.GlueRH1.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH2.bOut": {
+        "symbol": "MF.Coils.GlueRH2.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueRH2.eForce": {
+        "symbol": "MF.Coils.GlueRH2.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH2.eStatus": {
+        "symbol": "MF.Coils.GlueRH2.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH3.bOut": {
+        "symbol": "MF.Coils.GlueRH3.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.GlueRH3.eForce": {
+        "symbol": "MF.Coils.GlueRH3.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.GlueRH3.eStatus": {
+        "symbol": "MF.Coils.GlueRH3.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.MotorForward.bOut": {
+        "symbol": "MF.Coils.MotorForward.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.MotorForward.eForce": {
+        "symbol": "MF.Coils.MotorForward.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.MotorForward.eStatus": {
+        "symbol": "MF.Coils.MotorForward.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.MotorReverse.bOut": {
+        "symbol": "MF.Coils.MotorReverse.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.MotorReverse.eForce": {
+        "symbol": "MF.Coils.MotorReverse.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.MotorReverse.eStatus": {
+        "symbol": "MF.Coils.MotorReverse.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.OutfeedConveyor.bOut": {
+        "symbol": "MF.Coils.OutfeedConveyor.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.OutfeedConveyor.eForce": {
+        "symbol": "MF.Coils.OutfeedConveyor.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.OutfeedConveyor.eStatus": {
+        "symbol": "MF.Coils.OutfeedConveyor.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.Rotary.bOut": {
+        "symbol": "MF.Coils.Rotary.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.Rotary.eForce": {
+        "symbol": "MF.Coils.Rotary.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.Rotary.eStatus": {
+        "symbol": "MF.Coils.Rotary.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.SideAlign.bOut": {
+        "symbol": "MF.Coils.SideAlign.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.SideAlign.eForce": {
+        "symbol": "MF.Coils.SideAlign.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.SideAlign.eStatus": {
+        "symbol": "MF.Coils.SideAlign.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Coils.Vacuum.bOut": {
+        "symbol": "MF.Coils.Vacuum.bOut",
+        "plcType": "BOOL",
+        "areaType": "OutputSrc",
+        "source": "data-area"
+      },
+      "MF.Coils.Vacuum.eForce": {
+        "symbol": "MF.Coils.Vacuum.eForce",
+        "plcType": "E_ForceMode",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.Coils.Vacuum.eStatus": {
+        "symbol": "MF.Coils.Vacuum.eStatus",
+        "plcType": "E_ForceStatus",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.HMI.bDryCycleEnable": {
+        "symbol": "MF.HMI.bDryCycleEnable",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.bStepEnable": {
+        "symbol": "MF.HMI.bStepEnable",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.nPatternIndex": {
+        "symbol": "MF.HMI.nPatternIndex",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.Recipe.bHasUnsavedChanges": {
+        "symbol": "MF.HMI.Recipe.bHasUnsavedChanges",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.Recipe.eCommand": {
+        "symbol": "MF.HMI.Recipe.eCommand",
+        "plcType": "E_RecipeCommand",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.Recipe.nActiveIndex": {
+        "symbol": "MF.HMI.Recipe.nActiveIndex",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.Recipe.nSelectedIndex": {
+        "symbol": "MF.HMI.Recipe.nSelectedIndex",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Metrics.nLastCycleTimeMs": {
+        "symbol": "MF.Metrics.nLastCycleTimeMs",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Metrics.nTrayCount": {
+        "symbol": "MF.Metrics.nTrayCount",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Metrics.nTraysLastHour": {
+        "symbol": "MF.Metrics.nTraysLastHour",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Metrics.nTraysLastMinute": {
+        "symbol": "MF.Metrics.nTraysLastMinute",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Metrics.rTraysPerMinute": {
+        "symbol": "MF.Metrics.rTraysPerMinute",
+        "plcType": "REAL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      }
+    },
+    "enums": {
+      "E_ForceMode": {
+        "Auto": 0,
+        "On": 1,
+        "Off": 2
+      },
+      "E_ForceStatus": {
+        "Inactive": 0,
+        "Active": 1,
+        "ForcedOn": 2,
+        "ForcedOff": 3
+      },
+      "E_RecipeCommand": {
+        "None": 0,
+        "Load": 1,
+        "Save": 2,
+        "Discard": 3
+      }
+    },
+    "constants": {
+      "C.nPATTERN_COUNT": {
+        "plcType": "UINT",
+        "value": 8
+      },
+      "C.nRECIPE_DEFAULT_SLOT": {
+        "plcType": "UINT",
+        "value": 1
+      },
+      "C.nRECIPE_MAX_COUNT": {
+        "plcType": "UINT",
+        "value": 20
+      }
+    }
+  }
+}

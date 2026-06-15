@@ -1,10 +1,19 @@
-import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
 
-const CONTRACT_PATH = new URL('../src/lib/machine-contract.json', import.meta.url);
+function projectFilePath(relativePath) {
+  try {
+    return fileURLToPath(new URL(relativePath, import.meta.url));
+  } catch {
+    return relativePath.replace(/^\.\.\//, '');
+  }
+}
+
+const CONTRACT_PATH = projectFilePath('../src/lib/machine-contract.json');
+const SYMBOL_PROOF_PATH = projectFilePath(
+  '../test/fixtures/machine-contract/primary-symbol-proof.json',
+);
 const ROOT_FIELDS = ['DataType', 'SubItem', 'Symbol', 'DataArea', 'Module', 'Property', 'EnumInfo'];
 
 function asArray(value) {
@@ -34,10 +43,6 @@ function typeName(node) {
 
 function dataTypeName(node) {
   return textOf(node.Name);
-}
-
-function sha256(path) {
-  return createHash('sha256').update(readFileSync(path)).digest('hex').toUpperCase();
 }
 
 function declarationText(path) {
@@ -252,6 +257,31 @@ function materializeSymbols(contract) {
   return symbols;
 }
 
+function mapFromObject(object = {}) {
+  return new Map(Object.entries(object));
+}
+
+function loadSymbolProof(path = SYMBOL_PROOF_PATH) {
+  const fixture = JSON.parse(readFileSync(path, 'utf8'));
+
+  return {
+    source: fixture.source ?? {},
+    facts: {
+      atInput: new Set(fixture.facts?.atInput ?? []),
+      atOutput: new Set(fixture.facts?.atOutput ?? []),
+      constants: mapFromObject(fixture.facts?.constants),
+      recipeDirection: mapFromObject(fixture.facts?.recipeDirection),
+      hmiRetainWritable: new Set(fixture.facts?.hmiRetainWritable ?? []),
+      coilNames: fixture.facts?.coilNames ?? [],
+    },
+    tmc: {
+      symbols: mapFromObject(fixture.tmc?.symbols),
+      enums: mapFromObject(fixture.tmc?.enums),
+      constants: mapFromObject(fixture.tmc?.constants),
+    },
+  };
+}
+
 function requestsWrite(access) {
   return access === 'write' || access === 'readwrite';
 }
@@ -267,14 +297,35 @@ function isWritableByPlcSource(symbol, tmcSymbol, facts) {
 function validateContract(contract, options = {}) {
   const errors = [];
   const symbols = materializeSymbols(contract);
-  const primary = contract.source.variants[contract.primaryVariant];
+  const proof = options.proof ?? loadSymbolProof(options.fixturePath);
+  const facts = proof.facts;
+  const proofTmc = proof.tmc;
+  const proofVariant = proof.source.variant ?? contract.primaryVariant;
+  const proofVariantSource = contract.source.variants[proofVariant];
 
-  if (!primary) {
+  if (!contract.source.variants[contract.primaryVariant]) {
     errors.push(`Primary variant ${contract.primaryVariant} is not declared in source.variants`);
     return { ok: false, errors };
   }
+  if (!proofVariantSource) {
+    errors.push(`Fixture variant ${proofVariant} is not declared in source.variants`);
+  }
+  if (proofVariant !== contract.primaryVariant) {
+    errors.push(
+      `Fixture variant ${proofVariant} does not match primary variant ${contract.primaryVariant}`,
+    );
+  }
+  if (proofVariantSource?.commit !== proof.source.commit) {
+    errors.push(
+      `${proofVariant} fixture commit ${proof.source.commit} !== ${proofVariantSource?.commit}`,
+    );
+  }
+  if (proofVariantSource?.tmcSha256 !== proof.source.tmcSha256) {
+    errors.push(
+      `${proofVariant} fixture TMC hash ${proof.source.tmcSha256} !== ${proofVariantSource?.tmcSha256}`,
+    );
+  }
 
-  const facts = sourceFacts(primary.plcRoot);
   if (JSON.stringify(facts.coilNames) !== JSON.stringify(contract.coilNames)) {
     errors.push(
       `Contract coilNames do not match FB_CoilManager: ${contract.coilNames?.join(', ')} vs ${facts.coilNames.join(', ')}`,
@@ -302,42 +353,11 @@ function validateContract(contract, options = {}) {
     }
   }
 
-  const variantTmc = new Map();
-  for (const [variantName, variant] of Object.entries(contract.source.variants)) {
-    if (!existsSync(variant.tmc)) {
-      errors.push(`${variantName} missing pinned TMC at ${variant.tmc}`);
-      continue;
-    }
-
-    const actualHash = sha256(variant.tmc);
-    if (actualHash !== variant.tmcSha256) {
-      errors.push(`${variantName} TMC hash mismatch: ${actualHash} !== ${variant.tmcSha256}`);
-    }
-
-    try {
-      const head = execFileSync('git', ['-C', variant.plcRoot, 'rev-parse', 'HEAD'], {
-        encoding: 'utf8',
-      }).trim();
-      if (head !== variant.commit) {
-        errors.push(`${variantName} PLC HEAD mismatch: ${head} !== ${variant.commit}`);
-      }
-    } catch (error) {
-      errors.push(`${variantName} PLC commit check failed: ${error.message}`);
-    }
-
-    variantTmc.set(variantName, parseTmc(variant.tmc));
-  }
-
-  const primaryTmc = variantTmc.get(contract.primaryVariant);
-  if (!primaryTmc) {
-    return { ok: false, errors };
-  }
-
   for (const [constantKey, expected] of Object.entries(contract.constants ?? {})) {
     const sourceConstant = facts.constants.get(expected.symbol);
-    const tmcConstant = primaryTmc.constants.get(expected.symbol);
-    if (!sourceConstant) errors.push(`${constantKey} missing from PLC source constants`);
-    if (!tmcConstant) errors.push(`${constantKey} missing default value from pinned TMC`);
+    const tmcConstant = proofTmc.constants.get(expected.symbol);
+    if (!sourceConstant) errors.push(`${constantKey} missing from fixture PLC source constants`);
+    if (!tmcConstant) errors.push(`${constantKey} missing default value from fixture TMC proof`);
     if (sourceConstant && sourceConstant.plcType !== expected.plcType) {
       errors.push(`${constantKey} source type ${sourceConstant.plcType} !== ${expected.plcType}`);
     }
@@ -347,9 +367,9 @@ function validateContract(contract, options = {}) {
   }
 
   for (const [enumName, expectedValues] of Object.entries(contract.enums ?? {})) {
-    const actualValues = primaryTmc.enums.get(enumName);
+    const actualValues = proofTmc.enums.get(enumName);
     if (!actualValues) {
-      errors.push(`${enumName} missing from pinned TMC enum types`);
+      errors.push(`${enumName} missing from fixture TMC enum types`);
       continue;
     }
     if (JSON.stringify(actualValues) !== JSON.stringify(expectedValues)) {
@@ -358,20 +378,17 @@ function validateContract(contract, options = {}) {
   }
 
   for (const [key, entry] of Object.entries(symbols)) {
-    for (const [variantName, tmc] of variantTmc) {
-      const tmcSymbol = tmc.symbols.get(entry.symbol);
-      if (!tmcSymbol) {
-        errors.push(`${key} ${entry.symbol} missing from ${variantName} TMC`);
-        continue;
-      }
-      if (tmcSymbol.plcType !== entry.plcType) {
-        errors.push(
-          `${key} ${entry.symbol} type mismatch in ${variantName}: ${tmcSymbol.plcType} !== ${entry.plcType}`,
-        );
-      }
+    const tmcSymbol = proofTmc.symbols.get(entry.symbol);
+    if (!tmcSymbol) {
+      errors.push(`${key} ${entry.symbol} missing from ${proofVariant} fixture TMC proof`);
+      continue;
+    }
+    if (tmcSymbol.plcType !== entry.plcType) {
+      errors.push(
+        `${key} ${entry.symbol} type mismatch in ${proofVariant} fixture: ${tmcSymbol.plcType} !== ${entry.plcType}`,
+      );
     }
 
-    const tmcSymbol = primaryTmc.symbols.get(entry.symbol);
     if (facts.atInput.has(entry.symbol) && requestsWrite(entry.access)) {
       errors.push(`${key} marks AT %I* symbol ${entry.symbol} writable`);
       continue;
@@ -390,6 +407,7 @@ function validateContract(contract, options = {}) {
 }
 
 export { materializeSymbols, parseTmc, sourceFacts, validateContract };
+export { loadSymbolProof };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const contract = JSON.parse(readFileSync(CONTRACT_PATH, 'utf8'));
@@ -399,6 +417,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1);
   }
   console.log(
-    `Machine contract valid: ${Object.keys(result.symbols).length} symbols, ${Object.keys(contract.source.variants).length} pinned variants`,
+    `Machine contract valid: ${Object.keys(result.symbols).length} symbols against ${contract.primaryVariant} committed fixture`,
   );
 }
