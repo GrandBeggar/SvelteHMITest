@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "check": "svelte-check",
-    "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,json,svelte}\" \"scripts/**/*.js\" \"test/**/*.js\"",
-    "test": "vitest --run",
+    "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,json,svelte}\" \"scripts/**/*.js\" \"test/**/*.js\" \"e2e/**/*.js\"",
+    "test": "vitest --run && npm run test:browser",
+    "test:browser": "playwright install chromium && playwright test",
     "contract:validate": "node scripts/validate-machine-contract.js",
     "design:tokens": "node scripts/check-design-tokens.js",
     "build": "vite build",
@@ -21,6 +22,7 @@
     "ws": "^8.20.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@testing-library/svelte": "^5.3.1",
     "fast-xml-parser": "^5.9.0",
