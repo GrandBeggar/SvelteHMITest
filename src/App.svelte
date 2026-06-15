@@ -16,7 +16,8 @@
 
   function formatValue(value) {
     if (value === undefined) return 'Waiting...';
-    if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(2);
+    if (typeof value === 'number')
+      return Number.isInteger(value) ? String(value) : value.toFixed(2);
     return JSON.stringify(value);
   }
 

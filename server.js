@@ -14,7 +14,9 @@ const ADS_CONFIG = {
   targetAmsNetId: process.env.ADS_TARGET_AMS ?? '127.0.0.1.1.1',
   targetAdsPort: Number(process.env.ADS_TARGET_PORT ?? 851),
   routerAddress: process.env.ADS_ROUTER_ADDRESS,
-  routerTcpPort: process.env.ADS_ROUTER_TCP_PORT ? Number(process.env.ADS_ROUTER_TCP_PORT) : undefined,
+  routerTcpPort: process.env.ADS_ROUTER_TCP_PORT
+    ? Number(process.env.ADS_ROUTER_TCP_PORT)
+    : undefined,
   localAddress: process.env.ADS_LOCAL_ADDRESS,
   localAmsNetId: process.env.ADS_LOCAL_AMS,
   localAdsPort: process.env.ADS_LOCAL_PORT ? Number(process.env.ADS_LOCAL_PORT) : undefined,
@@ -291,7 +293,11 @@ setInterval(() => {
     mockValues.set('MF.Metrics.nTrayCount', next);
     mockValues.set('MF.Metrics.rTraysPerMinute', Number((next % 12) * 1.5));
     broadcast({ type: 'value', symbol: 'MF.Metrics.nTrayCount', value: next });
-    broadcast({ type: 'value', symbol: 'MF.Metrics.rTraysPerMinute', value: mockValues.get('MF.Metrics.rTraysPerMinute') });
+    broadcast({
+      type: 'value',
+      symbol: 'MF.Metrics.rTraysPerMinute',
+      value: mockValues.get('MF.Metrics.rTraysPerMinute'),
+    });
   } else if (!adsConnected) {
     connectAds();
   }

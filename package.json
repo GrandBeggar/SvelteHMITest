@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "check": "svelte-check",
+    "lint": "prettier --check \"*.{html,js,json}\" \"src/**/*.{css,js,svelte}\" \"test/**/*.js\"",
+    "test": "vitest --run",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "serve": "node server.js",
@@ -16,7 +19,13 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@testing-library/svelte": "^5.3.1",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.8.4",
+    "prettier-plugin-svelte": "^4.1.0",
     "svelte": "^5.53.12",
-    "vite": "^8.0.1"
+    "svelte-check": "^4.6.0",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.8"
   }
 }
