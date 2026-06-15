@@ -47,12 +47,12 @@ function connect() {
     }
 
     if (msg.type === 'value') {
-      values[msg.symbol] = msg.value;
+      values[msg.key] = msg.value;
       return;
     }
 
     if (msg.type === 'error') {
-      status.message = msg.symbol ? `${msg.symbol}: ${msg.message}` : msg.message;
+      status.message = msg.key ? `${msg.key}: ${msg.message}` : msg.message;
     }
   };
 
@@ -68,18 +68,18 @@ function connect() {
   };
 }
 
-export function subscribe(symbol, cycleTime = 250) {
-  const payload = { type: 'subscribe', symbol, cycleTime };
-  pendingSubscriptions.set(symbol, payload);
+export function subscribe(key, cycleTime = 250) {
+  const payload = { type: 'subscribe', key, cycleTime };
+  pendingSubscriptions.set(key, payload);
   send(payload);
 }
 
-export function read(symbol) {
-  send({ type: 'read', symbol });
+export function read(key) {
+  send({ type: 'read', key });
 }
 
-export function write(symbol, value) {
-  send({ type: 'write', symbol, value });
+export function write(key, value) {
+  send({ type: 'write', key, value });
 }
 
 export function getValues() {
