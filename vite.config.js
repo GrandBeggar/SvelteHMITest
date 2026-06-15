@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { resolve } from 'path';
 
+const backendTarget = process.env.HMI_BACKEND_URL ?? 'http://localhost:3001';
+
 export default defineConfig({
   plugins: [svelte()],
   resolve: {
@@ -12,10 +14,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/ws': {
-        target: 'http://localhost:3001',
+        target: backendTarget,
         ws: true,
       },
-      '/api/health': 'http://localhost:3001',
+      '/api/health': backendTarget,
     },
   },
 });

@@ -12,6 +12,10 @@
   import Wifi from '@lucide/svelte/icons/wifi';
   import WifiOff from '@lucide/svelte/icons/wifi-off';
   import Wrench from '@lucide/svelte/icons/wrench';
+  import ParamInput from '$lib/components/ParamInput.svelte';
+  import ParamRow from '$lib/components/ParamRow.svelte';
+  import StateMachineChip from '$lib/components/StateMachineChip.svelte';
+  import StatusBanner from '$lib/components/StatusBanner.svelte';
   import { firstPassSymbols } from '$lib/connections.js';
   import { getStatus, getValues, subscribe } from '$lib/adsStore.svelte.js';
 
@@ -73,6 +77,8 @@
   ];
 
   let activeView = $state('overview');
+  let previewPattern = $state(1);
+  let previewRecipe = $state(1);
 
   onMount(() => {
     for (const key of subscriptions) {
@@ -111,6 +117,10 @@
 
   function pageTitle() {
     return navItems.find((item) => item.id === activeView)?.label ?? 'Overview';
+  }
+
+  function connectionOnline() {
+    return status.gateway && (status.ads || status.mode === 'mock');
   }
 </script>
 
@@ -176,6 +186,10 @@
               <span class="eyebrow">Overview</span>
               <h2>Run Screen</h2>
               <p>{readinessText()}</p>
+              <div class="summary-chips" aria-label="Machine states">
+                <StateMachineChip state={readinessTone() === 'ready' ? 4 : 3} />
+                <StateMachineChip state={values['mode.dryCycleEnable'] ? 5 : 0} />
+              </div>
             </div>
 
             <div class="readiness-meter {readinessTone()}">
@@ -232,6 +246,35 @@
         <section class="page-placeholder">
           <span class="eyebrow">{pageTitle()}</span>
           <h2>{pageTitle()}</h2>
+          <div class="foundation-layout">
+            <StatusBanner
+              online={connectionOnline()}
+              label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+              detail={status.message}
+            />
+            <div class="state-chip-row" aria-label="Machine state examples">
+              <StateMachineChip state={0} />
+              <StateMachineChip state={3} />
+              <StateMachineChip state={4} />
+              <StateMachineChip state={7} />
+            </div>
+            <ParamRow label="Pattern">
+              <ParamInput
+                title="Index"
+                value={previewPattern}
+                min={1}
+                max={8}
+                onchange={(value) => (previewPattern = value)}
+              />
+              <ParamInput
+                title="Recipe"
+                value={previewRecipe}
+                min={0}
+                max={20}
+                onchange={(value) => (previewRecipe = value)}
+              />
+            </ParamRow>
+          </div>
           <div class="placeholder-grid">
             <article>
               <AlarmClock size={24} />
