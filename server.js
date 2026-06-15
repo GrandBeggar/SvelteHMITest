@@ -89,6 +89,29 @@ function handleMockRecipeCommand(command) {
   }
 }
 
+function handleMockCoilForce(key, forceMode) {
+  const prefix = key.replace(/\.force$/, '');
+  const statusValues = machineContract.enums.E_ForceStatus;
+  const forceValues = machineContract.enums.E_ForceMode;
+
+  broadcastValue(key, forceMode);
+
+  if (forceMode === forceValues.On) {
+    broadcastValue(`${prefix}.status`, statusValues.ForcedOn);
+    broadcastValue(`${prefix}.out`, true);
+    return;
+  }
+
+  if (forceMode === forceValues.Off) {
+    broadcastValue(`${prefix}.status`, statusValues.ForcedOff);
+    broadcastValue(`${prefix}.out`, false);
+    return;
+  }
+
+  broadcastValue(`${prefix}.status`, statusValues.Inactive);
+  broadcastValue(`${prefix}.out`, false);
+}
+
 function broadcast(payload) {
   const data = JSON.stringify(payload);
   for (const ws of wss.clients) {
@@ -219,8 +242,8 @@ async function connectAds() {
     statusMessage = `ADS connected to ${connection.targetAmsNetId}:${connection.targetAdsPort}`;
     broadcast(statusPayload());
 
-    for (const [key, cycleTime] of activeKeys) {
-      await subscribeAds(key, cycleTime);
+    for (const [key, active] of activeKeys) {
+      await subscribeAds(key, active.cycleTime);
     }
   })();
 
@@ -262,6 +285,14 @@ async function subscribeAds(key, cycleTime) {
   subscriptions.set(key, subscription);
 }
 
+async function unsubscribeAds(key) {
+  const subscription = subscriptions.get(key);
+  if (!subscription) return;
+
+  await subscription.unsubscribe();
+  subscriptions.delete(key);
+}
+
 async function handleRead(key, ws) {
   const entry = contractEntry(key, 'read');
 
@@ -282,6 +313,8 @@ async function handleWrite(key, value, ws, requestId) {
   if (MODE === 'mock') {
     if (key === 'recipe.command') {
       handleMockRecipeCommand(coercedValue);
+    } else if (key.startsWith('manual.coils.') && key.endsWith('.force')) {
+      handleMockCoilForce(key, coercedValue);
     } else {
       broadcastValue(key, coercedValue);
       if (key === 'recipe.selectedIndex' && mockValues.get('recipe.activeIndex') !== coercedValue) {
@@ -299,7 +332,7 @@ async function handleWrite(key, value, ws, requestId) {
 
 async function handleSubscribe(key, cycleTime, ws) {
   const entry = contractEntry(key, 'subscribe');
-  activeKeys.set(key, cycleTime);
+  addActiveKey(key, cycleTime, ws);
 
   if (MODE === 'mock') {
     send(ws, { type: 'value', key, symbol: entry.symbol, value: mockValues.get(key) ?? null });
@@ -310,6 +343,51 @@ async function handleSubscribe(key, cycleTime, ws) {
   await subscribeAds(key, cycleTime);
   const current = await ads.readValue(entry.symbol);
   send(ws, { type: 'value', key, symbol: entry.symbol, value: current.value });
+}
+
+async function handleUnsubscribe(key, ws) {
+  contractEntry(key, 'subscribe');
+  await removeActiveKey(key, ws);
+
+  send(ws, { type: 'unsubscribed', key });
+}
+
+function addActiveKey(key, cycleTime, ws) {
+  let active = activeKeys.get(key);
+  if (!active) {
+    active = { cycleTime, clients: new Set() };
+    activeKeys.set(key, active);
+  }
+
+  active.cycleTime = Math.min(active.cycleTime, cycleTime);
+  active.clients.add(ws);
+
+  if (!ws.activeKeys) {
+    ws.activeKeys = new Set();
+  }
+  ws.activeKeys.add(key);
+}
+
+async function removeActiveKey(key, ws) {
+  const active = activeKeys.get(key);
+  if (!active) return;
+
+  active.clients.delete(ws);
+  ws.activeKeys?.delete(key);
+
+  if (active.clients.size > 0) return;
+
+  activeKeys.delete(key);
+  if (MODE === 'ads') {
+    await unsubscribeAds(key);
+  }
+}
+
+async function clearClientActiveKeys(ws) {
+  const keys = [...(ws.activeKeys ?? [])];
+  for (const key of keys) {
+    await removeActiveKey(key, ws);
+  }
 }
 
 wss.on('connection', (ws) => {
@@ -326,12 +404,18 @@ wss.on('connection', (ws) => {
         await handleWrite(msg.key, msg.value, ws, msg.requestId);
       } else if (msg.type === 'subscribe') {
         await handleSubscribe(msg.key, Number(msg.cycleTime ?? 250), ws);
+      } else if (msg.type === 'unsubscribe') {
+        await handleUnsubscribe(msg.key, ws);
       } else {
         send(ws, { type: 'error', message: `Unknown message type: ${msg.type}` });
       }
     } catch (error) {
       send(ws, { type: 'error', key: msg?.key, message: error.message, requestId: msg?.requestId });
     }
+  });
+
+  ws.on('close', () => {
+    void clearClientActiveKeys(ws);
   });
 });
 

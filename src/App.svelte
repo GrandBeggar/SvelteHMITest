@@ -18,10 +18,18 @@
   import StatusBanner from '$lib/components/StatusBanner.svelte';
   import ValueDisplay from '$lib/components/ValueDisplay.svelte';
   import machineContract from '$lib/machine-contract.json';
-  import { getStatus, getValues, subscribe, write } from '$lib/adsStore.svelte.js';
+  import {
+    getStatus,
+    getValueMeta,
+    getValues,
+    subscribe,
+    unsubscribe,
+    write,
+  } from '$lib/adsStore.svelte.js';
 
   const status = getStatus();
   const values = getValues();
+  const valueMeta = getValueMeta();
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'recipe', label: 'Recipe', icon: SlidersHorizontal },
@@ -105,14 +113,52 @@
     { key: 'metrics.traysLastHour', label: 'Trays this hour' },
     { key: 'metrics.trayCount', label: 'Trays total' },
   ];
+  const forceModeLabels = {
+    0: 'Auto',
+    1: 'Force On',
+    2: 'Force Off',
+    Auto: 'Auto',
+    On: 'Force On',
+    Off: 'Force Off',
+  };
+  const forceStatusLabels = {
+    0: 'Inactive',
+    1: 'Active',
+    2: 'Forced On',
+    3: 'Forced Off',
+    Inactive: 'Inactive',
+    Active: 'Active',
+    ForcedOn: 'Forced On',
+    ForcedOff: 'Forced Off',
+  };
+  const diagnosticCoils = machineContract.coilNames.map((coilName) => {
+    const keyBase = `manual.coils.${coilName[0].toLowerCase()}${coilName.slice(1)}`;
+    return {
+      name: coilName,
+      label: coilName.replace(/([a-z])([A-Z0-9])/g, '$1 $2'),
+      outKey: `${keyBase}.out`,
+      statusKey: `${keyBase}.status`,
+      forceKey: `${keyBase}.force`,
+    };
+  });
+  const diagnosticSubscriptionKeys = diagnosticCoils.flatMap((coil) => [
+    coil.outKey,
+    coil.statusKey,
+  ]);
 
   let activeView = $state('overview');
   let recipeDraft = $state(machineContract.constants.recipeDefaultSlot.value);
   let patternDraft = $state(machineContract.constants.recipeDefaultSlot.value);
   let pendingRecipeCommand = $state(null);
+  let pendingForce = $state(null);
   let confirmAction = $state(null);
   let recipeMessage = $state('');
   let recipeError = $state('');
+  let diagnosticMessage = $state('');
+  let diagnosticError = $state('');
+  let diagnosticsSubscribed = false;
+  let serviceEnabled = $state(false);
+  let freshnessTick = $state(Date.now());
 
   const recipeMax = $derived(
     values['recipe.maxCount'] ?? machineContract.constants.recipeMaxCount.value,
@@ -122,6 +168,32 @@
   onMount(() => {
     for (const key of subscriptions) {
       subscribe(key, key.startsWith('metrics.') ? 1000 : 250);
+    }
+
+    const freshnessTimer = setInterval(() => {
+      freshnessTick = Date.now();
+    }, 500);
+
+    return () => {
+      clearInterval(freshnessTimer);
+    };
+  });
+
+  $effect(() => {
+    if (activeView === 'diagnostics' && !diagnosticsSubscribed) {
+      for (const key of diagnosticSubscriptionKeys) {
+        subscribe(key, 250);
+      }
+      diagnosticsSubscribed = true;
+      return;
+    }
+
+    if (activeView !== 'diagnostics' && diagnosticsSubscribed) {
+      for (const key of diagnosticSubscriptionKeys) {
+        unsubscribe(key);
+      }
+      diagnosticsSubscribed = false;
+      serviceEnabled = false;
     }
   });
 
@@ -208,6 +280,15 @@
     return connectionOnline() ? 'live' : 'stale';
   }
 
+  function diagnosticQuality(key) {
+    if (values[key] === undefined || values[key] === null) return 'unknown';
+    if (!connectionOnline()) return 'stale';
+
+    const updatedAt = valueMeta[key]?.updatedAt;
+    if (!updatedAt || freshnessTick - updatedAt > 1500) return 'stale';
+    return 'live';
+  }
+
   function groupTone(keys, dangerOnFalse = false) {
     if (keys.some((key) => valueQuality(key) === 'unknown')) return 'waiting';
     if (keys.some((key) => valueQuality(key) === 'stale')) return 'paused';
@@ -234,6 +315,13 @@
   function recipePendingText() {
     if (!pendingRecipeCommand) return 'Idle';
     return `${pendingRecipeCommand.label} pending`;
+  }
+
+  function diagnosticStatusText() {
+    if (pendingForce) return `${pendingForce.label} ${forceModeLabels[pendingForce.mode]} pending`;
+    return (
+      diagnosticError || diagnosticMessage || (serviceEnabled ? 'Service enabled' : 'Read only')
+    );
   }
 
   function requestRecipeCommand(command) {
@@ -267,6 +355,18 @@
     };
   }
 
+  function requestForce(coil, mode) {
+    confirmAction = {
+      type: 'force',
+      coil,
+      mode,
+      title: `${forceModeLabels[mode]} ${coil.label}`,
+      message: `${forceModeLabels[mode]} ${coil.label}?`,
+      confirmLabel: forceModeLabels[mode],
+      variant: mode === 'Auto' ? 'warning' : 'default',
+    };
+  }
+
   async function confirmPendingAction() {
     const action = confirmAction;
     confirmAction = null;
@@ -274,6 +374,11 @@
 
     if (action.type === 'pattern') {
       await applyPattern(action.target);
+      return;
+    }
+
+    if (action.type === 'force') {
+      await applyForce(action.coil, action.mode);
       return;
     }
 
@@ -313,6 +418,35 @@
       pendingRecipeCommand = null;
       recipeError = error.message;
     }
+  }
+
+  async function applyForce(coil, mode) {
+    diagnosticError = '';
+    diagnosticMessage = '';
+    pendingForce = { key: coil.forceKey, label: coil.label, mode };
+
+    try {
+      await write(coil.forceKey, mode);
+      diagnosticMessage = `${coil.label} ${forceModeLabels[mode]} accepted`;
+    } catch (error) {
+      diagnosticError = error.message;
+    } finally {
+      pendingForce = null;
+    }
+  }
+
+  function forceButtonDisabled(coil) {
+    return (
+      !serviceEnabled ||
+      !connectionOnline() ||
+      Boolean(pendingForce) ||
+      diagnosticQuality(coil.outKey) === 'unknown' ||
+      diagnosticQuality(coil.statusKey) === 'unknown'
+    );
+  }
+
+  function forceStatus(value) {
+    return forceStatusLabels[value] ?? formatValue(value);
   }
 </script>
 
@@ -609,6 +743,80 @@
                 <p class="recipe-alert">{recipeMessage}</p>
               {/if}
             </div>
+          </section>
+        </section>
+      {:else if activeView === 'diagnostics'}
+        <section class="diagnostics-layout" aria-label="Manual and IO diagnostics">
+          <section class="diagnostics-header">
+            <div>
+              <span class="eyebrow">Manual &amp; IO</span>
+              <h2>Diagnostics</h2>
+            </div>
+            <StatusBanner
+              online={connectionOnline() && !diagnosticError}
+              label={connectionOnline() ? 'Diagnostics Connected' : 'Diagnostics Offline'}
+              detail={diagnosticStatusText()}
+            />
+            <label class="service-toggle">
+              <input
+                type="checkbox"
+                checked={serviceEnabled}
+                onchange={(event) => (serviceEnabled = event.currentTarget.checked)}
+              />
+              <span>Service Enable</span>
+            </label>
+          </section>
+
+          <section class="coil-grid" aria-label="Coil diagnostics">
+            {#each diagnosticCoils as coil}
+              <article class="coil-card">
+                <div class="coil-card-head">
+                  <h3>{coil.label}</h3>
+                  <strong>{forceStatus(values[coil.statusKey])}</strong>
+                </div>
+                <SensorChip
+                  label="Output"
+                  value={values[coil.outKey]}
+                  quality={diagnosticQuality(coil.outKey)}
+                  activeLabel="On"
+                  inactiveLabel="Off"
+                />
+                <ValueDisplay
+                  label="Force status"
+                  value={forceStatus(values[coil.statusKey])}
+                  quality={diagnosticQuality(coil.statusKey)}
+                />
+                <div class="force-actions">
+                  <button
+                    class="kita-button secondary"
+                    type="button"
+                    aria-label="Return Auto {coil.label}"
+                    disabled={forceButtonDisabled(coil)}
+                    onclick={() => requestForce(coil, 'Auto')}
+                  >
+                    Auto
+                  </button>
+                  <button
+                    class="kita-button"
+                    type="button"
+                    aria-label="Force On {coil.label}"
+                    disabled={forceButtonDisabled(coil)}
+                    onclick={() => requestForce(coil, 'On')}
+                  >
+                    On
+                  </button>
+                  <button
+                    class="kita-button danger"
+                    type="button"
+                    aria-label="Force Off {coil.label}"
+                    disabled={forceButtonDisabled(coil)}
+                    onclick={() => requestForce(coil, 'Off')}
+                  >
+                    Off
+                  </button>
+                </div>
+              </article>
+            {/each}
           </section>
         </section>
       {:else}

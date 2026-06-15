@@ -43,6 +43,13 @@ for (const viewport of viewports) {
     await expect(page.getByRole('dialog')).toContainText('Recipe - Selected');
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('button', { name: 'Diagnostics' }).click();
+    await expect(page.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
+    await expect(page.getByLabel('Coil diagnostics')).toBeVisible();
+    await expect(page.getByLabel('Service Enable')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 }
 
@@ -55,6 +62,7 @@ test('nav target switches the page outlet', async ({ page }) => {
   await page.getByRole('button', { name: 'Diagnostics' }).click();
 
   await expect(page.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
+  await expect(page.getByText('Vacuum')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Run Screen' })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
