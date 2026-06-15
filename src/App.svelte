@@ -17,6 +17,7 @@
   import StateMachineChip from '$lib/components/StateMachineChip.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
   import ValueDisplay from '$lib/components/ValueDisplay.svelte';
+  import { deriveEventConditions, eventSummary } from '$lib/eventSurface.js';
   import machineContract from '$lib/machine-contract.json';
   import {
     getStatus,
@@ -164,6 +165,10 @@
     values['recipe.maxCount'] ?? machineContract.constants.recipeMaxCount.value,
   );
   const patternMax = machineContract.constants.patternCount.value;
+  const eventRows = $derived(
+    deriveEventConditions({ values, status, valueMeta, now: freshnessTick }),
+  );
+  const eventStatus = $derived(eventSummary(eventRows));
 
   onMount(() => {
     for (const key of subscriptions) {
@@ -447,6 +452,18 @@
 
   function forceStatus(value) {
     return forceStatusLabels[value] ?? formatValue(value);
+  }
+
+  function eventSeverityLabel(severity) {
+    const labels = {
+      running: 'Normal',
+      hold: 'Hold',
+      paused: 'Stale',
+      waiting: 'Waiting',
+      faulted: 'Active',
+      offline: 'Offline',
+    };
+    return labels[severity] ?? severity;
   }
 </script>
 
@@ -815,6 +832,48 @@
                     Off
                   </button>
                 </div>
+              </article>
+            {/each}
+          </section>
+        </section>
+      {:else if activeView === 'events'}
+        <section class="events-layout" aria-label="Alarm and event surface">
+          <section class="events-header">
+            <div>
+              <span class="eyebrow">Events</span>
+              <h2>Event Surface</h2>
+            </div>
+            <StatusBanner
+              online={connectionOnline() && eventStatus === 'No Active Conditions'}
+              label={eventStatus}
+              detail={status.message}
+            />
+          </section>
+
+          <section class="event-contract-note" aria-label="PLC alarm contract status">
+            <div>
+              <span class="eyebrow">PLC Alarm Contract</span>
+              <strong>Not present</strong>
+            </div>
+            <div>
+              <span>Ack / Reset</span>
+              <strong>Unavailable</strong>
+            </div>
+            <div>
+              <span>Decision</span>
+              <strong>0009</strong>
+            </div>
+          </section>
+
+          <section class="event-list" aria-label="Current event conditions">
+            {#each eventRows as row}
+              <article class="event-row severity-{row.severity}" data-quality={row.quality}>
+                <div>
+                  <span>{eventSeverityLabel(row.severity)}</span>
+                  <h3>{row.title}</h3>
+                  <p>{row.detail}</p>
+                </div>
+                <strong>{row.source}</strong>
               </article>
             {/each}
           </section>
