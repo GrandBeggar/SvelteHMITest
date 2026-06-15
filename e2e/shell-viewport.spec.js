@@ -50,6 +50,14 @@ for (const viewport of viewports) {
     await expect(page.getByLabel('Coil diagnostics')).toBeVisible();
     await expect(page.getByLabel('Service Enable')).toBeVisible();
     await expectNoHorizontalOverflow(page);
+
+    await page.getByRole('button', { name: 'Events' }).click();
+    await expect(page.getByRole('heading', { name: 'Event Surface' })).toBeVisible();
+    await expect(page.getByLabel('PLC alarm contract status')).toBeVisible();
+    await expect(page.getByLabel('Current event conditions')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reset' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Acknowledge' })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
   });
 }
 
@@ -59,10 +67,10 @@ test('nav target switches the page outlet', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Run Screen' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Diagnostics' }).click();
+  await page.getByRole('button', { name: 'Events' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Diagnostics' })).toBeVisible();
-  await expect(page.getByText('Vacuum')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Event Surface' })).toBeVisible();
+  await expect(page.getByText('PLC Alarm Contract')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Run Screen' })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });

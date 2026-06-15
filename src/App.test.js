@@ -357,6 +357,25 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     ),
   ).toBe(true);
 
+  sendOverviewValues(ws);
+  await fireEvent.click(screen.getByRole('button', { name: 'Events' }));
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Event Surface' })).toBeTruthy());
+  expect(screen.getByText('PLC Alarm Contract')).toBeTruthy();
+  expect(screen.getByText('Not present')).toBeTruthy();
+  expect(screen.getByText('Unavailable')).toBeTruthy();
+  expect(screen.getByText('No active machine conditions')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Reset' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Acknowledge' })).toBeNull();
+
+  sendValue(ws, 'safety.circuitOk', false);
+  await waitFor(() => expect(screen.getByText('Safety circuit open')).toBeTruthy());
+
+  sendStatus(ws, { ads: false, mode: 'ads', message: 'ADS disconnected' });
+  await waitFor(() => expect(screen.getByText('Event Source Offline')).toBeTruthy());
+  expect(screen.getByText('Gateway or ADS offline')).toBeTruthy();
+
+  sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });
+  sendOverviewValues(ws);
   await fireEvent.click(screen.getByRole('button', { name: 'Diagnostics' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Diagnostics' })).toBeTruthy());
   sendValue(ws, 'manual.coils.vacuum.out', false);
