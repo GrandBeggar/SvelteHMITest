@@ -65,6 +65,30 @@ function send(ws, payload) {
   }
 }
 
+function broadcastValue(key, value) {
+  const entry = contractSymbols[key];
+  mockValues.set(key, value);
+  broadcast({ type: 'value', key, symbol: entry.symbol, value });
+}
+
+function handleMockRecipeCommand(command) {
+  broadcastValue('recipe.command', command);
+
+  if (command === machineContract.enums.E_RecipeCommand.Load) {
+    broadcastValue('recipe.activeIndex', mockValues.get('recipe.selectedIndex'));
+    broadcastValue('recipe.hasUnsavedChanges', false);
+  } else if (command === machineContract.enums.E_RecipeCommand.Save) {
+    broadcastValue('recipe.hasUnsavedChanges', false);
+  } else if (command === machineContract.enums.E_RecipeCommand.Discard) {
+    broadcastValue('recipe.selectedIndex', mockValues.get('recipe.activeIndex'));
+    broadcastValue('recipe.hasUnsavedChanges', false);
+  }
+
+  if (command !== machineContract.enums.E_RecipeCommand.None) {
+    broadcastValue('recipe.command', machineContract.enums.E_RecipeCommand.None);
+  }
+}
+
 function broadcast(payload) {
   const data = JSON.stringify(payload);
   for (const ws of wss.clients) {
@@ -251,19 +275,26 @@ async function handleRead(key, ws) {
   send(ws, { type: 'value', key, symbol: entry.symbol, value: result.value });
 }
 
-async function handleWrite(key, value, ws) {
+async function handleWrite(key, value, ws, requestId) {
   const entry = contractEntry(key, 'write');
   const coercedValue = coerceContractValue(machineContract, entry, value);
 
   if (MODE === 'mock') {
-    mockValues.set(key, coercedValue);
-    broadcast({ type: 'value', key, symbol: entry.symbol, value: coercedValue });
+    if (key === 'recipe.command') {
+      handleMockRecipeCommand(coercedValue);
+    } else {
+      broadcastValue(key, coercedValue);
+      if (key === 'recipe.selectedIndex' && mockValues.get('recipe.activeIndex') !== coercedValue) {
+        broadcastValue('recipe.hasUnsavedChanges', true);
+      }
+    }
+    send(ws, { type: 'written', key, symbol: entry.symbol, requestId });
     return;
   }
 
   await ensureAds();
   await ads.writeValue(entry.symbol, coercedValue);
-  send(ws, { type: 'written', key, symbol: entry.symbol });
+  send(ws, { type: 'written', key, symbol: entry.symbol, requestId });
 }
 
 async function handleSubscribe(key, cycleTime, ws) {
@@ -292,14 +323,14 @@ wss.on('connection', (ws) => {
       if (msg.type === 'read') {
         await handleRead(msg.key, ws);
       } else if (msg.type === 'write') {
-        await handleWrite(msg.key, msg.value, ws);
+        await handleWrite(msg.key, msg.value, ws, msg.requestId);
       } else if (msg.type === 'subscribe') {
         await handleSubscribe(msg.key, Number(msg.cycleTime ?? 250), ws);
       } else {
         send(ws, { type: 'error', message: `Unknown message type: ${msg.type}` });
       }
     } catch (error) {
-      send(ws, { type: 'error', key: msg?.key, message: error.message });
+      send(ws, { type: 'error', key: msg?.key, message: error.message, requestId: msg?.requestId });
     }
   });
 });

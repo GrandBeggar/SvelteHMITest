@@ -130,6 +130,104 @@ describe('gateway contract enforcement', () => {
     }
   });
 
+  test('models recipe load as selected index plus command readback in mock mode', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'mock');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, {
+        type: 'write',
+        key: 'recipe.selectedIndex',
+        value: 3,
+        requestId: 'select-recipe',
+      });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'written' && message.requestId === 'select-recipe',
+        ),
+      ).resolves.toMatchObject({
+        key: 'recipe.selectedIndex',
+      });
+
+      send(ws, { type: 'read', key: 'recipe.activeIndex' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'recipe.activeIndex',
+        ),
+      ).resolves.toMatchObject({ value: 1 });
+
+      send(ws, { type: 'write', key: 'recipe.command', value: 'Load', requestId: 'load-recipe' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'written' && message.requestId === 'load-recipe',
+        ),
+      ).resolves.toMatchObject({
+        key: 'recipe.command',
+      });
+
+      send(ws, { type: 'read', key: 'recipe.activeIndex' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'recipe.activeIndex',
+        ),
+      ).resolves.toMatchObject({ value: 3 });
+
+      send(ws, { type: 'read', key: 'recipe.hasUnsavedChanges' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'value' && message.key === 'recipe.hasUnsavedChanges',
+        ),
+      ).resolves.toMatchObject({ value: false });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  test('rejects recipe values outside contract bounds and malformed commands', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'mock');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, { type: 'write', key: 'recipe.selectedIndex', value: 21, requestId: 'bad-index' });
+      await expect(
+        nextMessage(ws, (message) => message.type === 'error' && message.requestId === 'bad-index'),
+      ).resolves.toMatchObject({
+        key: 'recipe.selectedIndex',
+        message: 'MF.HMI.Recipe.nSelectedIndex value 21 is above maximum 20',
+      });
+
+      send(ws, { type: 'write', key: 'recipe.command', value: 'Reset', requestId: 'bad-command' });
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'error' && message.requestId === 'bad-command',
+        ),
+      ).resolves.toMatchObject({
+        key: 'recipe.command',
+        message: 'MF.HMI.Recipe.eCommand expects E_RecipeCommand',
+      });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
   test('reports an error when ADS mode cannot connect before a read', async () => {
     const port = pickPort();
     const server = startServer(port, 'ads');
@@ -149,6 +247,34 @@ describe('gateway contract enforcement', () => {
         ),
       ).resolves.toMatchObject({
         key: 'runtime.initialized',
+      });
+
+      ws.close();
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  test('reports an error when ADS mode rejects a recipe command write', async () => {
+    const port = pickPort();
+    const server = startServer(port, 'ads');
+
+    try {
+      await waitForHealth(port);
+      const ws = await connectWs(port);
+      await nextMessage(ws, (message) => message.type === 'status');
+
+      send(ws, { type: 'write', key: 'recipe.command', value: 'Load', requestId: 'ads-load' });
+
+      await expect(
+        nextMessage(
+          ws,
+          (message) => message.type === 'error' && message.key === 'recipe.command',
+          8000,
+        ),
+      ).resolves.toMatchObject({
+        key: 'recipe.command',
+        requestId: 'ads-load',
       });
 
       ws.close();
