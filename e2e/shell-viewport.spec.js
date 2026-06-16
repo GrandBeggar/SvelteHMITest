@@ -36,13 +36,28 @@ for (const viewport of viewports) {
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: 'Recipe' }).click();
-    await expect(page.getByRole('heading', { name: 'Recipe Controls' })).toBeVisible();
+    await expect(page.getByText('Working Recipe')).toBeVisible();
     await expect(page.getByRole('status')).toContainText('PLC Command Path Ready');
-    await expect(page.locator('.param-box')).toHaveCount(2);
+    await expect(page.getByLabel('Recipe parameter editor')).toBeVisible();
+    await expect(page.getByLabel('Gluing recipe parameters')).toBeVisible();
+    await expect(page.getByText('Leading Pattern ms')).toBeVisible();
+    await expect(page.getByText('Trailing Pattern ms')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply Pattern' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'LH3' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'RH3' })).toBeVisible();
+    await expect(page.getByText('Start Position')).toHaveCount(0);
+    await expect(page.getByText('Counts')).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
-    await page.locator('.param-box').first().click();
-    await expect(page.getByRole('dialog')).toContainText('Recipe - Selected');
+    await page.getByRole('button', { name: 'Forming' }).click();
+    await expect(page.getByLabel('Forming recipe parameters')).toBeVisible();
+    await expect(page.getByText('Rotary ms')).toBeVisible();
+    await expect(page.getByText('Side Align ms')).toBeVisible();
+    await expect(page.getByText('Back Stop ms')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.locator('.recipe-redesign-header .param-box').first().click();
+    await expect(page.getByRole('dialog')).toContainText('Select - Recipe');
     await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 

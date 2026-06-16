@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 class MockWebSocket {
@@ -100,8 +100,55 @@ function sendOverviewValues(ws, overrides = {}) {
   }
 }
 
+function sendRecipeParameterValues(ws, overrides = {}) {
+  const values = {
+    'recipe.pattern.current.leading.start': 10,
+    'recipe.pattern.current.leading.stop': 20,
+    'recipe.pattern.current.trailing.start': 30,
+    'recipe.pattern.current.trailing.stop': 40,
+    'recipe.pattern.current.guns.lh1': true,
+    'recipe.pattern.current.guns.lh2': false,
+    'recipe.pattern.current.guns.lh3': false,
+    'recipe.pattern.current.guns.rh1': true,
+    'recipe.pattern.current.guns.rh2': false,
+    'recipe.pattern.current.guns.rh3': false,
+    'parameters.gluing.lh1Offset': 1,
+    'parameters.gluing.lh2Offset': 2,
+    'parameters.gluing.lh3Offset': 3,
+    'parameters.gluing.rh1Offset': 4,
+    'parameters.gluing.rh2Offset': 5,
+    'parameters.gluing.rh3Offset': 6,
+    'recipe.forming.backStop.start': 100,
+    'recipe.forming.backStop.stop': 110,
+    'recipe.forming.bottomStop.start': 120,
+    'recipe.forming.bottomStop.stop': 130,
+    'recipe.forming.rotary.start': 140,
+    'recipe.forming.rotary.stop': 150,
+    'recipe.forming.sideAlign.start': 160,
+    'recipe.forming.sideAlign.stop': 170,
+    'recipe.forming.compression.start': 180,
+    'recipe.forming.compression.stop': 190,
+    'recipe.vacuum.vacuumOn.start': 200,
+    'recipe.vacuum.vacuumOn.stop': 210,
+    'recipe.vacuum.verifyTimer': 220,
+    ...overrides,
+  };
+
+  for (const [key, value] of Object.entries(values)) {
+    sendValue(ws, key, value);
+  }
+}
+
 function latestSent(ws, predicate) {
   return [...ws.sent].reverse().find(predicate);
+}
+
+async function enterNumpadDigits(digits) {
+  const dialog = screen.getByRole('dialog');
+  for (const digit of digits) {
+    await fireEvent.click(within(dialog).getByRole('button', { name: digit }));
+  }
+  await fireEvent.click(within(dialog).getByRole('button', { name: 'Accept' }));
 }
 
 test('renders the HMI shell and subscribes through contract keys', async () => {
@@ -181,11 +228,34 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     'recipe.selectedIndex': 4,
     'recipe.hasUnsavedChanges': true,
   });
+  sendRecipeParameterValues(ws);
 
   await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
-  await waitFor(() => expect(screen.getByText('Recipe Controls')).toBeTruthy());
+  await waitFor(() => expect(screen.getByText('Working Recipe')).toBeTruthy());
+  expect(screen.getByLabelText('Recipe parameter editor')).toBeTruthy();
+  expect(screen.getByLabelText('Gluing recipe parameters')).toBeTruthy();
+  expect(screen.getByText('Leading Pattern ms')).toBeTruthy();
+  expect(screen.getByText('Trailing Pattern ms')).toBeTruthy();
+  expect(screen.getByText('LH3')).toBeTruthy();
+  expect(screen.getByText('RH3')).toBeTruthy();
+  expect(
+    ws.sent.some(
+      (payload) =>
+        payload.type === 'subscribe' && payload.key === 'recipe.pattern.current.leading.start',
+    ),
+  ).toBe(true);
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key === 'recipe.forming.rotary.start',
+    ),
+  ).toBe(true);
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key === 'parameters.gluing.lh3Offset',
+    ),
+  ).toBe(true);
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Load' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Load Recipe' }));
   await waitFor(() => expect(screen.getByText('Load Recipe')).toBeTruthy());
   await fireEvent.click(screen.getAllByRole('button', { name: 'Load' }).at(-1));
 
@@ -219,7 +289,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
 
   await waitFor(() => expect(screen.getAllByText('Recipe 4 loaded').length).toBeGreaterThan(0));
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Save Recipe' }));
   await waitFor(() => expect(screen.getByText('Save Recipe')).toBeTruthy());
   await fireEvent.click(screen.getAllByRole('button', { name: 'Save' }).at(-1));
 
@@ -231,6 +301,140 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
       ),
     ).toBe(true),
   );
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Apply Pattern' }));
+  await waitFor(() => expect(screen.getByText('Apply Pattern')).toBeTruthy());
+  await fireEvent.click(screen.getAllByRole('button', { name: 'Apply' }).at(-1));
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' && payload.key === 'pattern.index' && payload.value === 2,
+      ),
+    ).toBe(true),
+  );
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Forming' }));
+  await waitFor(() => expect(screen.getByLabelText('Forming recipe parameters')).toBeTruthy());
+  expect(screen.getByText('Rotary ms')).toBeTruthy();
+  expect(screen.getByText('Side Align ms')).toBeTruthy();
+  expect(screen.getByText('Back Stop ms')).toBeTruthy();
+  expect(screen.queryByText('Start Position')).toBeNull();
+  expect(screen.queryByText('Counts')).toBeNull();
+
+  await fireEvent.click(screen.getByRole('button', { name: '140 ms' }));
+  await waitFor(() =>
+    expect(screen.getByRole('dialog').textContent).toContain('Rotary ms - Start'),
+  );
+  await enterNumpadDigits(['2', '5', '0']);
+  await waitFor(() => expect(screen.getByText('Write Rotary start')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'recipe.forming.rotary.start' &&
+          payload.value === 250,
+      ),
+    ).toBe(true),
+  );
+  let parameterWrite = latestSent(
+    ws,
+    (payload) => payload.type === 'write' && payload.key === 'recipe.forming.rotary.start',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'recipe.forming.rotary.start',
+    requestId: parameterWrite.requestId,
+  });
+  sendValue(ws, 'recipe.forming.rotary.start', 250);
+  await waitFor(() =>
+    expect(screen.getAllByText('Rotary start accepted').length).toBeGreaterThan(0),
+  );
+
+  await fireEvent.click(screen.getByRole('button', { name: '250 ms' }));
+  await waitFor(() =>
+    expect(screen.getByRole('dialog').textContent).toContain('Rotary ms - Start'),
+  );
+  await enterNumpadDigits(['+/-', '5']);
+  await waitFor(() => expect(screen.getByText('Write Rotary start')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+  await waitFor(() =>
+    expect(
+      latestSent(
+        ws,
+        (payload) => payload.type === 'write' && payload.key === 'recipe.forming.rotary.start',
+      ).value,
+    ).toBe(0),
+  );
+  parameterWrite = latestSent(
+    ws,
+    (payload) => payload.type === 'write' && payload.key === 'recipe.forming.rotary.start',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'recipe.forming.rotary.start',
+    requestId: parameterWrite.requestId,
+  });
+  sendValue(ws, 'recipe.forming.rotary.start', 0);
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Gluing' }));
+  await waitFor(() => expect(screen.getByLabelText('Gluing recipe parameters')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'LH3' }));
+  await waitFor(() => expect(screen.getByText('Write LH3 enable')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+  await waitFor(() =>
+    expect(
+      ws.sent.some(
+        (payload) =>
+          payload.type === 'write' &&
+          payload.key === 'recipe.pattern.current.guns.lh3' &&
+          payload.value === true,
+      ),
+    ).toBe(true),
+  );
+  parameterWrite = latestSent(
+    ws,
+    (payload) => payload.type === 'write' && payload.key === 'recipe.pattern.current.guns.lh3',
+  );
+  ws.receive({
+    type: 'error',
+    key: 'recipe.pattern.current.guns.lh3',
+    message: 'ADS rejected parameter write',
+    requestId: parameterWrite.requestId,
+  });
+  await waitFor(() =>
+    expect(
+      screen.getAllByText('recipe.pattern.current.guns.lh3: ADS rejected parameter write').length,
+    ).toBeGreaterThan(0),
+  );
+
+  await fireEvent.click(screen.getByRole('button', { name: '3 ms' }));
+  await waitFor(() => expect(screen.getByRole('dialog').textContent).toContain('Offset'));
+  await enterNumpadDigits(['9']);
+  await waitFor(() => expect(screen.getByText('Write LH3 offset')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+  await waitFor(() =>
+    expect(
+      latestSent(
+        ws,
+        (payload) => payload.type === 'write' && payload.key === 'parameters.gluing.lh3Offset',
+      ),
+    ).toBeTruthy(),
+  );
+  parameterWrite = latestSent(
+    ws,
+    (payload) => payload.type === 'write' && payload.key === 'parameters.gluing.lh3Offset',
+  );
+  ws.receive({
+    type: 'written',
+    key: 'parameters.gluing.lh3Offset',
+    requestId: parameterWrite.requestId,
+  });
+  sendValue(ws, 'parameters.gluing.lh3Offset', 9);
+  await waitFor(() => expect(screen.getAllByText('LH3 offset accepted').length).toBeGreaterThan(0));
 
   await fireEvent.click(screen.getByRole('button', { name: 'Diagnostics' }));
   await waitFor(() => expect(screen.getByRole('heading', { name: 'Diagnostics' })).toBeTruthy());
@@ -429,7 +633,49 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
       ),
     ).toBeTruthy(),
   );
+  forceWrite = latestSent(
+    ws,
+    (payload) =>
+      payload.type === 'write' &&
+      payload.key === 'manual.coils.vacuum.force' &&
+      payload.value === 'On',
+  );
+  ws.receive({
+    type: 'error',
+    key: 'manual.coils.vacuum.force',
+    message: 'ADS rejected force write during drop check',
+    requestId: forceWrite.requestId,
+  });
+
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });
+  sendOverviewValues(ws, {
+    'recipe.activeIndex': 1,
+    'recipe.selectedIndex': 1,
+    'recipe.hasUnsavedChanges': false,
+  });
+  sendRecipeParameterValues(ws);
+  await waitFor(() => expect(screen.getByText('Working Recipe')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Forming' }));
+  await waitFor(() => expect(screen.getByLabelText('Forming recipe parameters')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: '140 ms' }));
+  await waitFor(() =>
+    expect(screen.getByRole('dialog').textContent).toContain('Rotary ms - Start'),
+  );
+  await enterNumpadDigits(['2', '5', '0']);
+  await waitFor(() => expect(screen.getByText('Write Rotary start')).toBeTruthy());
+  await fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+  await waitFor(() =>
+    expect(
+      latestSent(
+        ws,
+        (payload) => payload.type === 'write' && payload.key === 'recipe.forming.rotary.start',
+      ),
+    ).toBeTruthy(),
+  );
   ws.close();
 
-  await waitFor(() => expect(screen.getByText('Gateway disconnected; retrying...')).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getAllByText('Gateway disconnected; retrying...').length).toBeGreaterThan(0),
+  );
 });
