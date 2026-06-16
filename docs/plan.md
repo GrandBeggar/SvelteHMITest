@@ -289,11 +289,59 @@ DoD:
 - No positional-setpoint controls; only retrofit-applicable stations shown.
 - Failing-path tests (rejected write, ADS drop) and a browser/viewport test are green.
 
+## Phase: Reference Components And 800x480 Shell
+
+Goal: port the live reference app's minimalist components/styling and retarget the shell to the fixed retrofit resolution. See decision 0013.
+
+Depends on: Design System Foundation, Main Page Redesign.
+
+Brief:
+- Port the live reference components (`RecipeHeader`, `SubNavButton`, `ParamRow`/`ParamInput`, status pills, header menu + status dot, alert banner) and reuse them across pages for one consistent look/feel.
+- Retarget the shell and main page to 800x480 fixed, no scrollbars; align the main page to the standardized components.
+
+DoD:
+- Shared components are used across all pages; no per-page bespoke styling (spot-checked by the auditor).
+- Browser/viewport test runs at 800x480 and asserts no horizontal or vertical overflow (no scrollbars).
+- Main page matches the live reference layout/styling and the full gate passes.
+
+## Phase: Recipe Screen Reference Rework
+
+Goal: rebuild the recipe screen to the live reference layout with Save/Cancel as the only commit surface. See decision 0013.
+
+Depends on: Reference Components And 800x480 Shell, Recipe Screen Redesign.
+
+Brief:
+- Recipe header (name + Select + save/cancel icons), station sub-tabs, compact two-column param rows that fit 800x480 without scroll (paged with `‹ ›` where needed).
+- Edit parameters with no per-field confirm; Save/Cancel maps to `E_RecipeCommand.Save`/`Discard`, driven by `bHasUnsavedChanges`.
+
+DoD:
+- No per-action confirm dialogs; only Save/Cancel commit, confirmed via `bHasUnsavedChanges`/`nActiveIndex`.
+- All writes still route through the gateway write-guard; bounds still enforced UI + gateway.
+- Fits 800x480 with no scrollbars; viewport test green.
+- Failing-path tests (ADS rejection, ADS drop) preserved.
+
+## Phase: Diagnostics Interaction Rework
+
+Goal: ungate manual controls and make glue guns momentary, per decision 0013.
+
+Depends on: Reference Components And 800x480 Shell, Manual And IO Diagnostics.
+
+Brief:
+- Remove the Service Enable gate and per-force confirm; manual force controls act directly.
+- Glue gun controls are momentary (press-and-hold): force on while held, return to Auto/Off on release.
+- Apply the standardized components; fit 800x480 without scroll.
+
+DoD:
+- No Service Enable gate and no confirm modal; manual controls act directly.
+- Glue guns are momentary and return to Auto/Off on release.
+- Force still writes `MF.Coils.<coil>.eForce` only; no code path writes `.out`/`.bOut` (auditor re-verifies).
+- Fits 800x480 with no scrollbars; failing-path tests (ADS rejected force, ADS drop while forced) preserved.
+
 ## Phase: Release Packaging
 
 Goal: produce a self-contained, pre-built release artifact the CX can run with only Node — no Vite, no dev dependencies, no on-device build (decision 0012).
 
-Depends on: Main Page Redesign, Recipe Screen Redesign.
+Depends on: Reference Components And 800x480 Shell, Recipe Screen Reference Rework, Diagnostics Interaction Rework.
 
 Brief:
 - Add an `npm run package` script that builds the app and assembles a bundle: `dist/`, `server.js`, `src/lib/contractRuntime.js`, `src/lib/machine-contract.json`, a runtime-only `package.json` (deps `ads-client`, `ws`), the `systemd/sveltehmi.service` unit, and a short run/rollback note.
