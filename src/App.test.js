@@ -72,6 +72,26 @@ function sendOverviewValues(ws, overrides = {}) {
     'metrics.traysPerMinute': 8.5,
     'metrics.traysLastMinute': 9,
     'metrics.traysLastHour': 480,
+    'state.machine': 'Ready',
+    'state.machine.isIdle': true,
+    'state.machine.cycleActive': false,
+    'state.machine.cycleOn': false,
+    'state.downstream': 'Idle',
+    'state.blankPicker': 'Idle',
+    'state.gluing': 'GluingIdle',
+    'state.backstops': 'Idle',
+    'state.forming': 'Idle',
+    'state.conveyor': 'Idle',
+    'tray.position.picked': false,
+    'tray.position.gluing': 0,
+    'tray.position.forming': 0,
+    'tray.position.firstCycle': false,
+    'machine.faulted': false,
+    'machine.firstFaultCode': 0,
+    'machine.activeFaultCount': 0,
+    'parameters.trayDemand.target': 120,
+    'parameters.trayDemand.actual': 42,
+    'parameters.trayDemand.enabled': true,
     ...overrides,
   };
 
@@ -92,7 +112,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
   expect(screen.getByText('SvelteHMI')).toBeTruthy();
   expect(screen.getByRole('navigation', { name: 'HMI views' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Overview' })).toBeTruthy();
-  expect(screen.getByText('Run Screen')).toBeTruthy();
+  expect(screen.getByText('Main Page')).toBeTruthy();
   expect(screen.getByText('Machine States')).toBeTruthy();
 
   await waitFor(() => expect(MockWebSocket.instances.length).toBe(1));
@@ -119,6 +139,14 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     ),
   ).toBe(true);
   expect(
+    ws.sent.some((payload) => payload.type === 'subscribe' && payload.key === 'state.machine'),
+  ).toBe(true);
+  expect(
+    ws.sent.some(
+      (payload) => payload.type === 'subscribe' && payload.key === 'parameters.trayDemand.target',
+    ),
+  ).toBe(true);
+  expect(
     ws.sent.some(
       (payload) => payload.type === 'subscribe' && payload.key.startsWith('manual.coils.'),
     ),
@@ -128,16 +156,20 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
   sendOverviewValues(ws);
 
   await waitFor(() => expect(screen.getAllByText('Machine Ready').length).toBeGreaterThan(0));
-  expect(screen.getByText('Press Button to Begin Cycling')).toBeTruthy();
+  expect(screen.getAllByText('Tray demand 42 / 120').length).toBeGreaterThan(0);
+  expect(screen.getByText('Tray target')).toBeTruthy();
+  expect(screen.getByText('Tray actual')).toBeTruthy();
+  expect(screen.getByText('Demand enabled')).toBeTruthy();
   expect(screen.getByText('Safety')).toBeTruthy();
+  expect(screen.getByText('Tray Position')).toBeTruthy();
   expect(screen.getByText('Performance')).toBeTruthy();
   expect(screen.getByText('Trays this min')).toBeTruthy();
 
-  sendValue(ws, 'input.hopperNotEmpty', null);
+  sendValue(ws, 'state.machine', null);
 
   await waitFor(() => expect(screen.getAllByText('Unknown').length).toBeGreaterThan(0));
 
-  sendValue(ws, 'input.hopperNotEmpty', true);
+  sendValue(ws, 'state.machine', 'Ready');
   sendStatus(ws, { ads: false, mode: 'ads', message: 'ADS disconnected' });
 
   await waitFor(() => expect(screen.getAllByText('Connection Hold').length).toBeGreaterThan(0));
@@ -371,7 +403,9 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
   await waitFor(() => expect(screen.getByText('Safety circuit open')).toBeTruthy());
 
   sendStatus(ws, { ads: false, mode: 'ads', message: 'ADS disconnected' });
-  await waitFor(() => expect(screen.getByText('Event Source Offline')).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getAllByText('Event Source Offline').length).toBeGreaterThan(0),
+  );
   expect(screen.getByText('Gateway or ADS offline')).toBeTruthy();
 
   sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });

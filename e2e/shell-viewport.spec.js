@@ -24,13 +24,15 @@ for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { name: 'Run Screen' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Machine Off' })).toBeVisible();
     await expect(page.getByText('SvelteHMI')).toBeVisible();
     await expect(page.getByText('Machine States')).toBeVisible();
     await expect(page.getByText('Safety', { exact: true })).toBeVisible();
-    await expect(page.getByText('Material', { exact: true })).toBeVisible();
+    await expect(page.getByText('Tray Position', { exact: true })).toBeVisible();
     await expect(page.getByText('Performance', { exact: true })).toBeVisible();
-    await expect(page.locator('.run-banner-state').getByText('Machine Ready')).toBeVisible();
+    await expect(page.getByText('Tray target')).toBeVisible();
+    await expect(page.getByText('Tray actual')).toBeVisible();
+    await expect(page.getByLabel('Main page state and event status')).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: 'Recipe' }).click();
@@ -65,12 +67,12 @@ test('nav target switches the page outlet', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Run Screen' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Machine Off' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Events' }).click();
 
   await expect(page.getByRole('heading', { name: 'Event Surface' })).toBeVisible();
   await expect(page.getByText('PLC Alarm Contract')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Run Screen' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Machine Off' })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });

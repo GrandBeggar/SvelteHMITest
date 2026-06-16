@@ -32,10 +32,10 @@
   const values = getValues();
   const valueMeta = getValueMeta();
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'recipe', label: 'Recipe', icon: SlidersHorizontal },
-    { id: 'diagnostics', label: 'Diagnostics', icon: Wrench },
-    { id: 'events', label: 'Events', icon: Bell },
+    { id: 'overview', label: 'Overview', menuLabel: 'Home', icon: LayoutDashboard },
+    { id: 'recipe', label: 'Recipe', menuLabel: 'Recipes', icon: SlidersHorizontal },
+    { id: 'diagnostics', label: 'Diagnostics', menuLabel: 'Diagnostics', icon: Wrench },
+    { id: 'events', label: 'Events', menuLabel: 'Events', icon: Bell },
   ];
   const subscriptions = [
     'runtime.initialized',
@@ -57,62 +57,59 @@
     'metrics.traysPerMinute',
     'metrics.traysLastMinute',
     'metrics.traysLastHour',
+    'state.machine',
+    'state.machine.isIdle',
+    'state.machine.cycleActive',
+    'state.machine.cycleOn',
+    'state.downstream',
+    'state.blankPicker',
+    'state.gluing',
+    'state.backstops',
+    'state.forming',
+    'state.conveyor',
+    'tray.position.picked',
+    'tray.position.gluing',
+    'tray.position.forming',
+    'tray.position.firstCycle',
+    'machine.faulted',
+    'machine.firstFaultCode',
+    'machine.activeFaultCount',
+    'parameters.trayDemand.target',
+    'parameters.trayDemand.actual',
+    'parameters.trayDemand.enabled',
   ];
-  const machineStates = [
-    { key: 'runtime.initialized', label: 'PLC initialized', activeLabel: 'Ready' },
-    {
-      key: 'input.cycleSwitch',
-      label: 'Cycle switch',
-      activeLabel: 'Active',
-      inactiveLabel: 'Idle',
-    },
-    {
-      key: 'input.startButton',
-      label: 'Start button',
-      activeLabel: 'Pressed',
-      inactiveLabel: 'Idle',
-    },
-    {
-      key: 'mode.dryCycleEnable',
-      label: 'Dry cycle',
-      activeLabel: 'Enabled',
-      inactiveLabel: 'Disabled',
-    },
-    {
-      key: 'input.hopperNotEmpty',
-      label: 'Hopper status',
-      activeLabel: 'Stock',
-      inactiveLabel: 'Empty',
-    },
+  const machineStateReadouts = [
+    { key: 'state.machine', label: 'Machine', enumName: 'E_MachineStates' },
+    { key: 'state.downstream', label: 'Downstream', enumName: 'E_DownStreamStates' },
+    { key: 'state.blankPicker', label: 'Blank Picker', enumName: 'E_BlankPickerStates' },
+    { key: 'state.gluing', label: 'Gluing', enumName: 'E_GluingStates' },
+    { key: 'state.backstops', label: 'Backstops', enumName: 'E_BackstopStates' },
+    { key: 'state.forming', label: 'Forming', enumName: 'E_FormingStates' },
+    { key: 'state.conveyor', label: 'Conveyor', enumName: 'E_ConveyorStates' },
   ];
   const safetyStates = [
     { key: 'safety.controlPower', label: 'Control power', activeLabel: 'On', inactiveLabel: 'Off' },
     { key: 'safety.circuitOk', label: 'Safety circuit', activeLabel: 'OK', inactiveLabel: 'Open' },
   ];
-  const materialStates = [
+  const trayPositionStates = [
     {
-      key: 'input.trayPicked',
+      key: 'tray.position.picked',
       label: 'Tray picked',
       activeLabel: 'Picked',
       inactiveLabel: 'Clear',
     },
     {
-      key: 'input.outfeedSensor',
-      label: 'Outfeed sensor',
-      activeLabel: 'Blocked',
+      key: 'tray.position.firstCycle',
+      label: 'First cycle',
+      activeLabel: 'Active',
       inactiveLabel: 'Clear',
     },
-  ];
-  const runReadouts = [
-    { key: 'recipe.activeIndex', label: 'Active recipe' },
-    { key: 'recipe.selectedIndex', label: 'Selected recipe' },
-    { key: 'pattern.index', label: 'Pattern' },
-    { key: 'metrics.lastCycleTimeMs', label: 'Last cycle', unit: 'ms' },
   ];
   const performanceReadouts = [
     { key: 'metrics.traysLastMinute', label: 'Trays this min' },
     { key: 'metrics.traysLastHour', label: 'Trays this hour' },
     { key: 'metrics.trayCount', label: 'Trays total' },
+    { key: 'metrics.traysPerMinute', label: 'Rate', unit: 'TPM' },
   ];
   const forceModeLabels = {
     0: 'Auto',
@@ -253,6 +250,22 @@
     return String(value);
   }
 
+  function humanizeEnumName(value) {
+    return String(value)
+      .replace(/^E_/, '')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ');
+  }
+
+  function enumLabel(enumName, value, fallback = 'Unknown') {
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'string') return humanizeEnumName(value);
+
+    const enumMap = machineContract.enums?.[enumName] ?? {};
+    const match = Object.entries(enumMap).find(([, enumValue]) => enumValue === value);
+    return match ? humanizeEnumName(match[0]) : formatValue(value, fallback);
+  }
+
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, Number(value)));
   }
@@ -260,6 +273,12 @@
   function readinessText() {
     if (!status.gateway) return 'Gateway offline';
     if (status.mode === 'ads' && !status.ads) return 'ADS offline';
+    if (valueQuality('state.machine') === 'live')
+      return enumLabel('E_MachineStates', values['state.machine']);
+    if (valueQuality('state.machine') === 'stale') {
+      return `${enumLabel('E_MachineStates', values['state.machine'])} stale`;
+    }
+    if (values['machine.faulted']) return 'Faulted';
     if (!values['runtime.initialized']) return 'PLC not initialized';
     if (!values['safety.controlPower'] || !values['safety.circuitOk']) return 'Safety open';
     return 'Ready';
@@ -301,16 +320,36 @@
     return keys.every((key) => Boolean(values[key])) ? 'running' : 'inactive';
   }
 
+  function enumStateTone(key, enumName) {
+    const quality = valueQuality(key);
+    if (quality === 'unknown') return 'waiting';
+    if (quality === 'stale') return 'paused';
+
+    const label = enumLabel(enumName, values[key]);
+    if (label.includes('Fault')) return 'faulted';
+    if (label.includes('Stopping') || label.includes('Pausing')) return 'soft-fault';
+    if (label.includes('Paused')) return 'paused';
+    if (label.includes('Starting') || label.includes('Delay')) return 'transitioning';
+    if (label.includes('Active') || label.includes('Cycling') || label.includes('Sensor')) {
+      return 'running';
+    }
+    if (label.includes('Ready')) return 'ready';
+    return 'inactive';
+  }
+
   function headlineText() {
     if (!connectionOnline()) return 'Connection Hold';
-    if (readinessText() === 'Ready') return 'Machine Ready';
-    return 'Machine Hold';
+    const stateQuality = valueQuality('state.machine');
+    if (stateQuality === 'unknown') return 'Machine State Unknown';
+    return `Machine ${enumLabel('E_MachineStates', values['state.machine'])}`;
   }
 
   function headlineDetail() {
     if (!connectionOnline()) return 'Showing stale or unknown values';
-    if (readinessText() === 'Ready') return 'Press Button to Begin Cycling';
-    return readinessText();
+    if (valueQuality('state.machine') === 'unknown') return readinessText();
+    const target = formatValue(values['parameters.trayDemand.target'], 'Unknown');
+    const actual = formatValue(values['parameters.trayDemand.actual'], 'Unknown');
+    return `Tray demand ${actual} / ${target}`;
   }
 
   function recipeQuality(key) {
@@ -473,9 +512,24 @@
       <span class="brand-mark">SH</span>
       <div>
         <h1>SvelteHMI</h1>
-        <p>KITA Ipak Retrofit</p>
+        <p>KITA Packaging Machinery</p>
       </div>
     </div>
+
+    <nav class="top-nav" aria-label="HMI views">
+      {#each navItems as item}
+        <button
+          type="button"
+          class:active={activeView === item.id}
+          aria-label={item.label}
+          title={item.label}
+          onclick={() => (activeView = item.id)}
+        >
+          <item.icon size={18} />
+          <span>{item.menuLabel}</span>
+        </button>
+      {/each}
+    </nav>
 
     <div class="top-status" aria-label="Gateway and ADS status">
       <span class:ok={status.gateway}>
@@ -491,72 +545,73 @@
   </header>
 
   <div class="shell-grid">
-    <nav class="rail" aria-label="HMI views">
-      {#each navItems as item}
-        <button
-          type="button"
-          class:active={activeView === item.id}
-          aria-label={item.label}
-          title={item.label}
-          onclick={() => (activeView = item.id)}
-        >
-          <item.icon size={22} />
-          <span>{item.label}</span>
-        </button>
-      {/each}
-    </nav>
-
     <section class="workspace" aria-label={pageTitle()}>
       <div class="status-strip">
         <div>
-          <span>Message</span>
-          <strong>{status.message}</strong>
+          <span>Machine State</span>
+          <strong>{readinessText()}</strong>
         </div>
         <div>
-          <span>Panel</span>
-          <strong>{location.host}</strong>
+          <span>Tray Demand</span>
+          <strong
+            >{formatValue(values['parameters.trayDemand.actual'], 'Unknown')} / {formatValue(
+              values['parameters.trayDemand.target'],
+              'Unknown',
+            )}</strong
+          >
         </div>
         <div>
-          <span>Cycle</span>
-          <strong>{formatValue(values['input.cycleSwitch'])}</strong>
+          <span>Events</span>
+          <strong>{eventStatus}</strong>
         </div>
       </div>
 
       {#if activeView === 'overview'}
-        <section class="overview-layout" aria-label="Overview run screen">
-          <section class="run-banner {readinessTone()}" aria-labelledby="run-screen-title">
+        <section class="overview-layout main-page-layout" aria-label="Main page run screen">
+          <section class="main-page-header {readinessTone()}" aria-labelledby="main-page-title">
             <div>
-              <span class="eyebrow">Overview</span>
-              <h2 id="run-screen-title">Run Screen</h2>
+              <span class="eyebrow">Main Page</span>
+              <h2 id="main-page-title">{headlineText()}</h2>
+              <p>{headlineDetail()}</p>
             </div>
-            <div class="run-banner-state">
-              <strong>{headlineText()}</strong>
-              <span>{headlineDetail()}</span>
-            </div>
-          </section>
-
-          <section class="run-readouts" aria-label="Run setpoints and counters">
-            {#each runReadouts as readout}
+            <div class="main-page-demand">
               <ValueDisplay
-                label={readout.label}
-                value={values[readout.key]}
-                unit={readout.unit}
-                quality={valueQuality(readout.key)}
+                label="Tray target"
+                value={values['parameters.trayDemand.target']}
+                quality={valueQuality('parameters.trayDemand.target')}
               />
-            {/each}
+              <ValueDisplay
+                label="Tray actual"
+                value={values['parameters.trayDemand.actual']}
+                quality={valueQuality('parameters.trayDemand.actual')}
+              />
+              <SensorChip
+                label="Demand enabled"
+                value={values['parameters.trayDemand.enabled']}
+                quality={valueQuality('parameters.trayDemand.enabled')}
+                activeLabel="Enabled"
+                inactiveLabel="Disabled"
+              />
+            </div>
           </section>
 
-          <section class="run-group state-{groupTone(machineStates.map((item) => item.key))}">
+          <section
+            class="run-group state-{valueQuality('state.machine')}"
+            aria-label="Machine states"
+          >
             <span class="run-group-label">Machine States</span>
-            <div class="run-group-pocket">
-              {#each machineStates as item}
-                <SensorChip
-                  label={item.label}
-                  value={values[item.key]}
-                  quality={valueQuality(item.key)}
-                  activeLabel={item.activeLabel}
-                  inactiveLabel={item.inactiveLabel}
-                />
+            <div class="state-pocket">
+              {#each machineStateReadouts as item}
+                <div class="machine-state-tile" data-quality={valueQuality(item.key)}>
+                  <span>{item.label}</span>
+                  <StateMachineChip
+                    label={enumLabel(item.enumName, values[item.key])}
+                    state={enumStateTone(item.key, item.enumName)}
+                  />
+                  {#if valueQuality(item.key) !== 'live'}
+                    <small>{valueQuality(item.key) === 'stale' ? 'Stale' : 'Unknown'}</small>
+                  {/if}
+                </div>
               {/each}
             </div>
           </section>
@@ -581,10 +636,10 @@
             </div>
           </section>
 
-          <section class="run-group state-{groupTone(materialStates.map((item) => item.key))}">
-            <span class="run-group-label">Material</span>
+          <section class="run-group state-{groupTone(trayPositionStates.map((item) => item.key))}">
+            <span class="run-group-label">Tray Position</span>
             <div class="run-group-pocket">
-              {#each materialStates as item}
+              {#each trayPositionStates as item}
                 <SensorChip
                   label={item.label}
                   value={values[item.key]}
@@ -593,6 +648,16 @@
                   inactiveLabel={item.inactiveLabel}
                 />
               {/each}
+              <ValueDisplay
+                label="Gluing position"
+                value={values['tray.position.gluing']}
+                quality={valueQuality('tray.position.gluing')}
+              />
+              <ValueDisplay
+                label="Forming position"
+                value={values['tray.position.forming']}
+                quality={valueQuality('tray.position.forming')}
+              />
             </div>
           </section>
 
@@ -606,16 +671,10 @@
                   quality={valueQuality(readout.key)}
                 />
               {/each}
-              <ValueDisplay
-                label="Trays/min"
-                value={values['metrics.traysPerMinute']}
-                unit="TPM"
-                quality={valueQuality('metrics.traysPerMinute')}
-              />
             </div>
           </section>
 
-          <section class="run-footer" aria-label="Run status">
+          <section class="main-page-footer" aria-label="Main page state and event status">
             <StatusBanner
               online={connectionOnline()}
               label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
@@ -623,23 +682,17 @@
             />
             <div class="footer-chips">
               <StateMachineChip
-                label={headlineText()}
-                state={readinessTone() === 'ready' ? 4 : 5}
+                label={readinessText()}
+                state={enumStateTone('state.machine', 'E_MachineStates')}
               />
               <StateMachineChip
-                label={formatValue(values['input.hopperNotEmpty'], 'Hopper Unknown')}
-                state={valueQuality('input.hopperNotEmpty') === 'live' &&
-                values['input.hopperNotEmpty']
-                  ? 4
-                  : valueQuality('input.hopperNotEmpty') === 'stale'
-                    ? 5
-                    : 1}
+                label={eventStatus}
+                state={eventStatus === 'No Active Conditions' ? 'running' : 'faulted'}
               />
-              <StateMachineChip
-                label={formatValue(values['input.trayPicked'], 'Tray Unknown')}
-                state={valueQuality('input.trayPicked') === 'live' && values['input.trayPicked']
-                  ? 4
-                  : 1}
+              <ValueDisplay
+                label="Fault count"
+                value={values['machine.activeFaultCount']}
+                quality={valueQuality('machine.activeFaultCount')}
               />
               <ValueDisplay
                 label="Rate"
