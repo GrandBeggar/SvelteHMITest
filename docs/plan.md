@@ -239,11 +239,61 @@ DoD:
 - Tests cover no alarm, active alarm, ADS offline, and stale alarm data.
 - Auditor verifies the UI does not imply reset/ack behavior that the PLC contract does not support.
 
+## Phase: Reference Recipe Parameter Contract Extension
+
+Goal: extend the machine contract with the retrofit's per-station recipe timing parameters, machine-state symbols, and tray demand, aligned to the retrofit PLC. See decision 0010.
+
+Depends on: Machine Contract Inventory, PLC Source Pin.
+
+Brief:
+- Inventory the Glue (per glue-head Leading/Trailing Start/Stop ms) and Forming (Rotary Folders, Side Align, MUB Folder, Compression Start/Stop ms — no positional setpoints) timing parameters from the committed PLC source and pinned `.tmc`.
+- Inventory the retrofit machine-state symbols and the tray-demand symbol.
+- Align all names to the retrofit PLC symbols, not the reference placeholders.
+
+DoD:
+- New symbols are present in `machine-contract.json` with direction/type/bounds derived from PLC source, not guessed.
+- `npm run contract:validate` passes; each new symbol is verified against the pinned `.tmc`.
+- Names match the retrofit PLC symbols; no positional-setpoint symbols are included unless the retrofit requires them.
+- Auditor verifies each new symbol exists in the pinned `.tmc` and direction is source-derived.
+
+## Phase: Main Page Redesign
+
+Goal: rebuild the main page to the reference layout — header bar with menu, machine state, tray demand, and a footer bar with state/event status. See decision 0010.
+
+Depends on: Design System Foundation, Reference Recipe Parameter Contract Extension, Overview And Run Screen.
+
+Brief:
+- Header bar with menu navigation; machine-state chips for the (few) retrofit states; tray-demand readout alongside production counters; footer bar with state/event status.
+- Drop the machine animation.
+
+DoD:
+- Machine state and tray demand render from contract keys, not raw symbols.
+- Header and footer bars present; no machine animation.
+- Handles ADS offline / stale / unknown visibly.
+- Browser/viewport test green at desktop and TF1200; no UI depends on mock-only symbols.
+
+## Phase: Recipe Screen Redesign
+
+Goal: adopt the reference Gluing/Forming recipe layout for the retrofit recipe parameters. See decision 0010.
+
+Depends on: Reference Recipe Parameter Contract Extension, Recipe And Pattern Controls, Design System Foundation.
+
+Brief:
+- Recipe name + `Select` dropdown header with save/cancel; station sub-nav tabs; two-column Start/Stop ms parameter grids paged with arrows.
+- Bind parameters to the extended contract symbols; writes go through the recipe command handshake and gateway guard.
+- Drop Forming positional setpoints; keep only retrofit-applicable tabs/stations; align all names to the retrofit.
+
+DoD:
+- Glue/Forming parameter screens are bound to real extended contract symbols, not placeholders.
+- All writes route through the contract write-guard; bounds enforced in UI and gateway.
+- No positional-setpoint controls; only retrofit-applicable stations shown.
+- Failing-path tests (rejected write, ADS drop) and a browser/viewport test are green.
+
 ## Phase: Service Deployment
 
 Goal: move from manual `nohup` testing to a reversible supervised service.
 
-Depends on: Gateway Contract Layer, HMI Shell, Overview And Run Screen.
+Depends on: Gateway Contract Layer, HMI Shell, Overview And Run Screen, Main Page Redesign, Recipe Screen Redesign.
 
 Brief:
 - Install `systemd/sveltehmi.service` with the working ADS LAN route environment.
