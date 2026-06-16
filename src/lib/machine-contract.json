@@ -1014,7 +1014,7 @@
     }
   },
   "referenceRecipeParameters": {
-    "sourceDecision": "docs/decisions/0010-reference-recipe-parameter-contract.md",
+    "sourceDecision": "docs/decisions/0011-reference-recipe-parameter-contract.md",
     "workingRecipeRoot": "MF.Recipes[0]",
     "currentPatternRoot": "MF.HMI.CurrentPattern",
     "formingStations": ["BackStop", "BottomStop", "Rotary", "SideAlign", "Compression"],
