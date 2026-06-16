@@ -74,6 +74,7 @@
       "MF.HMI.nPatternIndex",
       "MF.HMI.nPatternIndexLast"
     ],
+    "retainWritableRoots": ["MF.HMI.CurrentPattern", "MF.Parameters", "MF.Recipes[0]"],
     "coilNames": [
       "Vacuum",
       "MotorForward",
@@ -448,21 +449,84 @@
         "itemType": "Output",
         "source": "expanded"
       },
-      "MF.HMI.bDryCycleEnable": {
-        "symbol": "MF.HMI.bDryCycleEnable",
+      "MF.Faults.bIsMachineFaulted": {
+        "symbol": "MF.Faults.bIsMachineFaulted",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Faults.nActiveFaultCount": {
+        "symbol": "MF.Faults.nActiveFaultCount",
+        "plcType": "UINT",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.Faults.nFirstFaultCode": {
+        "symbol": "MF.Faults.nFirstFaultCode",
+        "plcType": "UINT",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Guns.bLH1": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bLH1",
         "plcType": "BOOL",
         "areaType": "RetainSrc",
         "source": "expanded"
       },
-      "MF.HMI.bStepEnable": {
-        "symbol": "MF.HMI.bStepEnable",
+      "MF.HMI.CurrentPattern.Guns.bLH2": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bLH2",
         "plcType": "BOOL",
         "areaType": "RetainSrc",
         "source": "expanded"
       },
-      "MF.HMI.nPatternIndex": {
-        "symbol": "MF.HMI.nPatternIndex",
-        "plcType": "INT",
+      "MF.HMI.CurrentPattern.Guns.bLH3": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bLH3",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Guns.bRH1": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bRH1",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Guns.bRH2": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bRH2",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Guns.bRH3": {
+        "symbol": "MF.HMI.CurrentPattern.Guns.bRH3",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Leading.nStart": {
+        "symbol": "MF.HMI.CurrentPattern.Leading.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Leading.nStop": {
+        "symbol": "MF.HMI.CurrentPattern.Leading.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Trailing.nStart": {
+        "symbol": "MF.HMI.CurrentPattern.Trailing.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.CurrentPattern.Trailing.nStop": {
+        "symbol": "MF.HMI.CurrentPattern.Trailing.nStop",
+        "plcType": "UINT",
         "areaType": "RetainSrc",
         "source": "expanded"
       },
@@ -487,6 +551,18 @@
       "MF.HMI.Recipe.nSelectedIndex": {
         "symbol": "MF.HMI.Recipe.nSelectedIndex",
         "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.bDryCycleEnable": {
+        "symbol": "MF.HMI.bDryCycleEnable",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.HMI.nPatternIndex": {
+        "symbol": "MF.HMI.nPatternIndex",
+        "plcType": "INT",
         "areaType": "RetainSrc",
         "source": "expanded"
       },
@@ -519,9 +595,312 @@
         "plcType": "REAL",
         "areaType": "RetainSrc",
         "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nLH1Offset": {
+        "symbol": "MF.Parameters.Gluing.nLH1Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nLH2Offset": {
+        "symbol": "MF.Parameters.Gluing.nLH2Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nLH3Offset": {
+        "symbol": "MF.Parameters.Gluing.nLH3Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nRH1Offset": {
+        "symbol": "MF.Parameters.Gluing.nRH1Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nRH2Offset": {
+        "symbol": "MF.Parameters.Gluing.nRH2Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.Gluing.nRH3Offset": {
+        "symbol": "MF.Parameters.Gluing.nRH3Offset",
+        "plcType": "INT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.bGluingDisabled": {
+        "symbol": "MF.Parameters.bGluingDisabled",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.bIgnoreHopperEmpty": {
+        "symbol": "MF.Parameters.bIgnoreHopperEmpty",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.bIgnorePickVerification": {
+        "symbol": "MF.Parameters.bIgnorePickVerification",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.bTrayDemandEnabled": {
+        "symbol": "MF.Parameters.bTrayDemandEnabled",
+        "plcType": "BOOL",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nConveyorStopDelay": {
+        "symbol": "MF.Parameters.nConveyorStopDelay",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nCycleStartDelay": {
+        "symbol": "MF.Parameters.nCycleStartDelay",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nDownstreamStart": {
+        "symbol": "MF.Parameters.nDownstreamStart",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nDownstreamStop": {
+        "symbol": "MF.Parameters.nDownstreamStop",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nLongPressDelay": {
+        "symbol": "MF.Parameters.nLongPressDelay",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nMachineStartDelay": {
+        "symbol": "MF.Parameters.nMachineStartDelay",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nTrayDemandActual": {
+        "symbol": "MF.Parameters.nTrayDemandActual",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Parameters.nTrayDemandTarget": {
+        "symbol": "MF.Parameters.nTrayDemandTarget",
+        "plcType": "UDINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.BackStop.nStart": {
+        "symbol": "MF.Recipes[0].Forming.BackStop.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.BackStop.nStop": {
+        "symbol": "MF.Recipes[0].Forming.BackStop.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.BottomStop.nStart": {
+        "symbol": "MF.Recipes[0].Forming.BottomStop.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.BottomStop.nStop": {
+        "symbol": "MF.Recipes[0].Forming.BottomStop.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.Compression.nStart": {
+        "symbol": "MF.Recipes[0].Forming.Compression.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.Compression.nStop": {
+        "symbol": "MF.Recipes[0].Forming.Compression.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.Rotary.nStart": {
+        "symbol": "MF.Recipes[0].Forming.Rotary.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.Rotary.nStop": {
+        "symbol": "MF.Recipes[0].Forming.Rotary.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.SideAlign.nStart": {
+        "symbol": "MF.Recipes[0].Forming.SideAlign.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Forming.SideAlign.nStop": {
+        "symbol": "MF.Recipes[0].Forming.SideAlign.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Vacuum.VacuumOn.nStart": {
+        "symbol": "MF.Recipes[0].Vacuum.VacuumOn.nStart",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Vacuum.VacuumOn.nStop": {
+        "symbol": "MF.Recipes[0].Vacuum.VacuumOn.nStop",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.Recipes[0].Vacuum.VerifyTimer": {
+        "symbol": "MF.Recipes[0].Vacuum.VerifyTimer",
+        "plcType": "UINT",
+        "areaType": "RetainSrc",
+        "source": "expanded"
+      },
+      "MF.States.Backstops.nBackstopState": {
+        "symbol": "MF.States.Backstops.nBackstopState",
+        "plcType": "E_BackstopStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.BlankPicker.eBlankPickerState": {
+        "symbol": "MF.States.BlankPicker.eBlankPickerState",
+        "plcType": "E_BlankPickerStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.Conveyor.nConveyorState": {
+        "symbol": "MF.States.Conveyor.nConveyorState",
+        "plcType": "E_ConveyorStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.DownstreamState.nDownstreamState": {
+        "symbol": "MF.States.DownstreamState.nDownstreamState",
+        "plcType": "E_DownStreamStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.Forming.nFormingState": {
+        "symbol": "MF.States.Forming.nFormingState",
+        "plcType": "E_FormingStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.Gluing.nGluingState": {
+        "symbol": "MF.States.Gluing.nGluingState",
+        "plcType": "E_GluingStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.MachineState.bCycleIsActive": {
+        "symbol": "MF.States.MachineState.bCycleIsActive",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.MachineState.bCycleIsOn": {
+        "symbol": "MF.States.MachineState.bCycleIsOn",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.MachineState.bIsIdle": {
+        "symbol": "MF.States.MachineState.bIsIdle",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.States.MachineState.eMachineState": {
+        "symbol": "MF.States.MachineState.eMachineState",
+        "plcType": "E_MachineStates",
+        "areaType": "Internal",
+        "itemType": "Output",
+        "source": "expanded"
+      },
+      "MF.TrayPosition.FirstCycle": {
+        "symbol": "MF.TrayPosition.FirstCycle",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.TrayPosition.TrayForming": {
+        "symbol": "MF.TrayPosition.TrayForming",
+        "plcType": "INT",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.TrayPosition.TrayGluing": {
+        "symbol": "MF.TrayPosition.TrayGluing",
+        "plcType": "INT",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
+      },
+      "MF.TrayPosition.TrayPicked": {
+        "symbol": "MF.TrayPosition.TrayPicked",
+        "plcType": "BOOL",
+        "areaType": "Internal",
+        "itemType": "Input",
+        "source": "expanded"
       }
     },
     "enums": {
+      "E_BackstopStates": {
+        "Idle": 0,
+        "Active": 1
+      },
+      "E_BlankPickerStates": {
+        "Idle": 0,
+        "Active": 1
+      },
+      "E_ConveyorStates": {
+        "Idle": 0,
+        "Active": 1,
+        "Stopping": 2
+      },
+      "E_DownStreamStates": {
+        "Idle": 0,
+        "TrayAtSensor": 1,
+        "DelayActive": 2,
+        "SensorClear": 3
+      },
       "E_ForceMode": {
         "Auto": 0,
         "On": 1,
@@ -532,6 +911,28 @@
         "Active": 1,
         "ForcedOn": 2,
         "ForcedOff": 3
+      },
+      "E_FormingStates": {
+        "Idle": 0,
+        "Active": 1
+      },
+      "E_GluingStates": {
+        "GluingIdle": 0,
+        "GluingActive": 1
+      },
+      "E_MachineStates": {
+        "Off": 0,
+        "Ready": 1,
+        "Starting": 2,
+        "Idle": 3,
+        "CycleStarting": 4,
+        "Cycling": 5,
+        "CycleStopping": 6,
+        "CyclePausing": 7,
+        "CyclePaused": 8,
+        "HopperEmptyPausing": 9,
+        "HopperEmptyPaused": 10,
+        "Faulted": 11
       },
       "E_RecipeCommand": {
         "None": 0,

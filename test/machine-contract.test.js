@@ -23,6 +23,43 @@ describe('machine contract validator', () => {
     expect(result.ok).toBe(true);
   });
 
+  test('includes the retrofit recipe parameter and state extension symbols', () => {
+    const symbols = materializeSymbols(contract);
+
+    expect(symbols['recipe.forming.backStop.start']).toMatchObject({
+      symbol: 'MF.Recipes[0].Forming.BackStop.nStart',
+      plcType: 'UINT',
+      access: 'readwrite',
+    });
+    expect(symbols['recipe.forming.compression.stop'].symbol).toBe(
+      'MF.Recipes[0].Forming.Compression.nStop',
+    );
+    expect(symbols['recipe.vacuum.vacuumOn.start'].symbol).toBe(
+      'MF.Recipes[0].Vacuum.VacuumOn.nStart',
+    );
+    expect(symbols['recipe.pattern.current.leading.start'].symbol).toBe(
+      'MF.HMI.CurrentPattern.Leading.nStart',
+    );
+    expect(symbols['recipe.pattern.current.guns.lh1'].symbol).toBe(
+      'MF.HMI.CurrentPattern.Guns.bLH1',
+    );
+    expect(symbols['parameters.gluing.lh1Offset'].symbol).toBe('MF.Parameters.Gluing.nLH1Offset');
+    expect(symbols['parameters.trayDemand.target']).toMatchObject({
+      symbol: 'MF.Parameters.nTrayDemandTarget',
+      access: 'readwrite',
+    });
+    expect(symbols['parameters.trayDemand.actual']).toMatchObject({
+      symbol: 'MF.Parameters.nTrayDemandActual',
+      access: 'read',
+    });
+    expect(symbols['state.machine']).toMatchObject({
+      symbol: 'MF.States.MachineState.eMachineState',
+      plcType: 'E_MachineStates',
+      access: 'read',
+    });
+    expect(contract.enums.E_MachineStates.Cycling).toBe(5);
+  });
+
   test('does not read live PLC source paths during committed validation', () => {
     const hermeticContract = structuredClone(contract);
 
@@ -55,6 +92,27 @@ describe('machine contract validator', () => {
     expect(result.ok).toBe(false);
     expect(result.errors).toContain(
       'test.stepEnableTrap marks AT %I* symbol MF.HMI.bStepEnable writable',
+    );
+  });
+
+  test('rejects writable access to retained roots not approved by source evidence', () => {
+    const unsafeContract = structuredClone(contract);
+    unsafeContract.symbols['test.metricsWriteTrap'] = {
+      symbol: 'MF.Metrics.nTrayCount',
+      plcType: 'UDINT',
+      access: 'write',
+      pages: ['recipe'],
+      updateMs: 0,
+      safetyLevel: 'test',
+      writeConfirmation: 'none',
+      mock: 0,
+    };
+
+    const result = validateContract(unsafeContract);
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain(
+      'test.metricsWriteTrap marks MF.Metrics.nTrayCount writable without PLC input/HMI-write evidence',
     );
   });
 });

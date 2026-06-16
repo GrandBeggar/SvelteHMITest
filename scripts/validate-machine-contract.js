@@ -92,6 +92,7 @@ function sourceFacts(plcRoot) {
     constants: new Map(),
     recipeDirection: new Map(),
     hmiRetainWritable: new Set(),
+    retainWritableRoots: new Set(),
     coilNames: [],
   };
 
@@ -115,6 +116,17 @@ function sourceFacts(plcRoot) {
     if (['BOOL', 'INT', 'UINT', 'UDINT', 'REAL'].includes(variable.plcType)) {
       facts.hmiRetainWritable.add(symbol);
     }
+  }
+
+  const mfDeclaration = declarationText(`${multiFormRoot}\\GVLs\\MF.TcGVL`);
+  if (mfDeclaration.includes('Parameters\t: ParametersStructure')) {
+    facts.retainWritableRoots.add('MF.Parameters');
+  }
+  if (mfDeclaration.includes('Recipes\t\t: ARRAY [0..C.nRECIPE_MAX_COUNT] OF RecipeStructure')) {
+    facts.retainWritableRoots.add('MF.Recipes[0]');
+  }
+  if (hmiDeclaration.includes('CurrentPattern\t\t\t\t: ST_GluePattern')) {
+    facts.retainWritableRoots.add('MF.HMI.CurrentPattern');
   }
 
   const recipeDeclaration = declarationText(`${multiFormRoot}\\DUTs\\Structs\\ST_RecipeHMI.TcDUT`);
@@ -185,6 +197,35 @@ function parseTmc(path) {
     }
   }
 
+  function arrayBounds(node) {
+    const info = node?.ArrayInfo;
+    if (!info) return undefined;
+
+    return {
+      lower: Number(info.LBound),
+      upper: Number(info.LBound) + Number(info.Elements) - 1,
+    };
+  }
+
+  function expandArray(prefix, plcType, areaType, itemType, stack) {
+    const bounds = arrayBounds(stack.at(-1));
+    if (!bounds) return false;
+
+    for (let index = bounds.lower; index <= bounds.upper; index += 1) {
+      const indexedName = `${prefix}[${index}]`;
+      addSymbol(indexedName, {
+        symbol: indexedName,
+        plcType,
+        areaType,
+        itemType,
+        source: 'expanded',
+      });
+      expand(indexedName, plcType, areaType, itemType, stack.slice(0, -1));
+    }
+
+    return true;
+  }
+
   function expand(prefix, plcType, areaType, inheritedItemType, stack = []) {
     if (stack.includes(plcType)) return;
     const dataType = dataTypes.get(plcType);
@@ -201,6 +242,7 @@ function parseTmc(path) {
         itemType,
         source: 'expanded',
       });
+      expandArray(name, childType, areaType, itemType, [...stack, subItem]);
       expand(name, childType, areaType, itemType, [...stack, plcType]);
     }
   }
@@ -219,6 +261,7 @@ function parseTmc(path) {
           source: 'data-area',
         };
         addSymbol(symbol.Name, metadata);
+        expandArray(symbol.Name, plcType, areaType, metadata.itemType, [symbol]);
         expand(symbol.Name, plcType, areaType, metadata.itemType);
 
         const defaultValue = symbol.Default?.Value;
@@ -272,6 +315,7 @@ function loadSymbolProof(path = SYMBOL_PROOF_PATH) {
       constants: mapFromObject(fixture.facts?.constants),
       recipeDirection: mapFromObject(fixture.facts?.recipeDirection),
       hmiRetainWritable: new Set(fixture.facts?.hmiRetainWritable ?? []),
+      retainWritableRoots: new Set(fixture.facts?.retainWritableRoots ?? []),
       coilNames: fixture.facts?.coilNames ?? [],
     },
     tmc: {
@@ -290,6 +334,13 @@ function isWritableByPlcSource(symbol, tmcSymbol, facts) {
   if (facts.atInput.has(symbol)) return false;
   if (facts.recipeDirection.get(symbol) === 'write') return true;
   if (facts.hmiRetainWritable.has(symbol)) return true;
+  if (
+    [...(facts.retainWritableRoots ?? [])].some(
+      (root) => symbol === root || symbol.startsWith(`${root}.`),
+    )
+  ) {
+    return true;
+  }
   if (tmcSymbol?.itemType === 'Input') return true;
   return false;
 }
@@ -378,6 +429,11 @@ function validateContract(contract, options = {}) {
   }
 
   for (const [key, entry] of Object.entries(symbols)) {
+    if (facts.atInput.has(entry.symbol) && requestsWrite(entry.access)) {
+      errors.push(`${key} marks AT %I* symbol ${entry.symbol} writable`);
+      continue;
+    }
+
     const tmcSymbol = proofTmc.symbols.get(entry.symbol);
     if (!tmcSymbol) {
       errors.push(`${key} ${entry.symbol} missing from ${proofVariant} fixture TMC proof`);
@@ -389,10 +445,6 @@ function validateContract(contract, options = {}) {
       );
     }
 
-    if (facts.atInput.has(entry.symbol) && requestsWrite(entry.access)) {
-      errors.push(`${key} marks AT %I* symbol ${entry.symbol} writable`);
-      continue;
-    }
     if (requestsWrite(entry.access) && !isWritableByPlcSource(entry.symbol, tmcSymbol, facts)) {
       errors.push(`${key} marks ${entry.symbol} writable without PLC input/HMI-write evidence`);
     }
