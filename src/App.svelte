@@ -2,24 +2,22 @@
   import { onMount } from 'svelte';
   import Activity from '@lucide/svelte/icons/activity';
   import AlarmClock from '@lucide/svelte/icons/alarm-clock';
-  import Bell from '@lucide/svelte/icons/bell';
   import ChevronLeft from '@lucide/svelte/icons/chevron-left';
   import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Gauge from '@lucide/svelte/icons/gauge';
-  import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
-  import Network from '@lucide/svelte/icons/network';
   import SaveIcon from '@lucide/svelte/icons/save';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
-  import Wifi from '@lucide/svelte/icons/wifi';
-  import WifiOff from '@lucide/svelte/icons/wifi-off';
-  import Wrench from '@lucide/svelte/icons/wrench';
   import XIcon from '@lucide/svelte/icons/x';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+  import FooterPill from '$lib/components/FooterPill.svelte';
+  import NavButton from '$lib/components/NavButton.svelte';
   import ParamInput from '$lib/components/ParamInput.svelte';
   import ParamRow from '$lib/components/ParamRow.svelte';
   import SensorChip from '$lib/components/SensorChip.svelte';
   import StateMachineChip from '$lib/components/StateMachineChip.svelte';
+  import StateMachineHolder from '$lib/components/StateMachineHolder.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
+  import SubNavButton from '$lib/components/SubNavButton.svelte';
   import ValueDisplay from '$lib/components/ValueDisplay.svelte';
   import { numberBounds } from '$lib/contractRuntime.js';
   import { deriveEventConditions, eventSummary } from '$lib/eventSurface.js';
@@ -37,10 +35,10 @@
   const values = getValues();
   const valueMeta = getValueMeta();
   const navItems = [
-    { id: 'overview', label: 'Overview', menuLabel: 'Home', icon: LayoutDashboard },
-    { id: 'recipe', label: 'Recipe', menuLabel: 'Recipes', icon: SlidersHorizontal },
-    { id: 'diagnostics', label: 'Diagnostics', menuLabel: 'Diagnostics', icon: Wrench },
-    { id: 'events', label: 'Events', menuLabel: 'Events', icon: Bell },
+    { id: 'overview', label: 'Overview', menuLabel: 'Home' },
+    { id: 'recipe', label: 'Recipe', menuLabel: 'Recipes' },
+    { id: 'diagnostics', label: 'Diagnostics', menuLabel: 'Diagnostics' },
+    { id: 'events', label: 'Events', menuLabel: 'Events' },
   ];
   const subscriptions = [
     'runtime.initialized',
@@ -719,652 +717,606 @@
 <main class="app-shell">
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">SH</span>
-      <div>
-        <h1>SvelteHMI</h1>
-        <p>KITA Packaging Machinery</p>
-      </div>
+      <span class="brand-name">KITA</span>
+      <span class="brand-sub">PACKAGING MACHINERY</span>
     </div>
 
     <nav class="top-nav" aria-label="HMI views">
       {#each navItems as item}
-        <button
-          type="button"
-          class:active={activeView === item.id}
-          aria-label={item.label}
-          title={item.label}
+        <NavButton
+          label={item.menuLabel}
+          active={activeView === item.id}
           onclick={() => (activeView = item.id)}
-        >
-          <item.icon size={18} />
-          <span>{item.menuLabel}</span>
-        </button>
+        />
       {/each}
     </nav>
 
-    <div class="top-status" aria-label="Gateway and ADS status">
-      <span class:ok={status.gateway}>
-        {#if status.gateway}<Wifi size={18} />{:else}<WifiOff size={18} />{/if}
-        Gateway
-      </span>
-      <span class:ok={status.ads || status.mode === 'mock'}>
-        <Network size={18} />
-        {status.mode}
-      </span>
-      <strong class={readinessTone()}>{readinessText()}</strong>
-    </div>
+    <div
+      class="connection-dot"
+      class:online={connectionOnline()}
+      title={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+      aria-label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+    ></div>
   </header>
 
-  <div class="shell-grid">
-    <section class="workspace" aria-label={pageTitle()}>
-      <div class="status-strip">
-        <div>
-          <span>Machine State</span>
-          <strong>{readinessText()}</strong>
+  <section class="workspace" aria-label={pageTitle()}>
+    {#if activeView === 'overview'}
+      <section class="overview-layout main-page-layout" aria-label="Main page run screen">
+        <div class="status-row">
+          <StatusBanner
+            online={connectionOnline()}
+            label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+            detail={status.message}
+          />
         </div>
-        <div>
-          <span>Tray Demand</span>
-          <strong
-            >{formatValue(values['parameters.trayDemand.actual'], 'Unknown')} / {formatValue(
-              values['parameters.trayDemand.target'],
-              'Unknown',
-            )}</strong
-          >
-        </div>
-        <div>
-          <span>Events</span>
-          <strong>{eventStatus}</strong>
-        </div>
-      </div>
 
-      {#if activeView === 'overview'}
-        <section class="overview-layout main-page-layout" aria-label="Main page run screen">
-          <section class="main-page-header {readinessTone()}" aria-labelledby="main-page-title">
-            <div>
-              <span class="eyebrow">Main Page</span>
-              <h2 id="main-page-title">{headlineText()}</h2>
-              <p>{headlineDetail()}</p>
-            </div>
-            <div class="main-page-demand">
-              <ValueDisplay
-                label="Tray target"
-                value={values['parameters.trayDemand.target']}
-                quality={valueQuality('parameters.trayDemand.target')}
-              />
-              <ValueDisplay
-                label="Tray actual"
-                value={values['parameters.trayDemand.actual']}
-                quality={valueQuality('parameters.trayDemand.actual')}
-              />
-              <SensorChip
-                label="Demand enabled"
-                value={values['parameters.trayDemand.enabled']}
-                quality={valueQuality('parameters.trayDemand.enabled')}
-                activeLabel="Enabled"
-                inactiveLabel="Disabled"
-              />
-            </div>
-          </section>
-
-          <section
-            class="run-group state-{valueQuality('state.machine')}"
-            aria-label="Machine states"
-          >
-            <span class="run-group-label">Machine States</span>
-            <div class="state-pocket">
-              {#each machineStateReadouts as item}
-                <div class="machine-state-tile" data-quality={valueQuality(item.key)}>
-                  <span>{item.label}</span>
-                  <StateMachineChip
-                    label={enumLabel(item.enumName, values[item.key])}
-                    state={enumStateTone(item.key, item.enumName)}
-                  />
-                  {#if valueQuality(item.key) !== 'live'}
-                    <small>{valueQuality(item.key) === 'stale' ? 'Stale' : 'Unknown'}</small>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          </section>
-
-          <section
-            class="run-group state-{groupTone(
-              safetyStates.map((item) => item.key),
-              true,
-            )}"
-          >
-            <span class="run-group-label">Safety</span>
-            <div class="run-group-pocket">
-              {#each safetyStates as item}
-                <SensorChip
-                  label={item.label}
-                  value={values[item.key]}
-                  quality={valueQuality(item.key)}
-                  activeLabel={item.activeLabel}
-                  inactiveLabel={item.inactiveLabel}
-                />
-              {/each}
-            </div>
-          </section>
-
-          <section class="run-group state-{groupTone(trayPositionStates.map((item) => item.key))}">
-            <span class="run-group-label">Tray Position</span>
-            <div class="run-group-pocket">
-              {#each trayPositionStates as item}
-                <SensorChip
-                  label={item.label}
-                  value={values[item.key]}
-                  quality={valueQuality(item.key)}
-                  activeLabel={item.activeLabel}
-                  inactiveLabel={item.inactiveLabel}
-                />
-              {/each}
-              <ValueDisplay
-                label="Gluing position"
-                value={values['tray.position.gluing']}
-                quality={valueQuality('tray.position.gluing')}
-              />
-              <ValueDisplay
-                label="Forming position"
-                value={values['tray.position.forming']}
-                quality={valueQuality('tray.position.forming')}
-              />
-            </div>
-          </section>
-
-          <section class="performance">
-            <span class="performance-label">Performance</span>
-            <div class="performance-values">
-              {#each performanceReadouts as readout}
-                <ValueDisplay
-                  label={readout.label}
-                  value={values[readout.key]}
-                  quality={valueQuality(readout.key)}
-                />
-              {/each}
-            </div>
-          </section>
-
-          <section class="main-page-footer" aria-label="Main page state and event status">
-            <StatusBanner
-              online={connectionOnline()}
-              label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
-              detail={status.message}
-            />
-            <div class="footer-chips">
-              <StateMachineChip
-                label={readinessText()}
-                state={enumStateTone('state.machine', 'E_MachineStates')}
-              />
-              <StateMachineChip
-                label={eventStatus}
-                state={eventStatus === 'No Active Conditions' ? 'running' : 'faulted'}
-              />
-              <ValueDisplay
-                label="Fault count"
-                value={values['machine.activeFaultCount']}
-                quality={valueQuality('machine.activeFaultCount')}
-              />
-              <ValueDisplay
-                label="Rate"
-                value={values['metrics.traysPerMinute']}
-                unit="TPM"
-                quality={valueQuality('metrics.traysPerMinute')}
-              />
-            </div>
-          </section>
-        </section>
-      {:else if activeView === 'recipe'}
-        <section class="recipe-layout" aria-label="Recipe and pattern controls">
-          <section class="recipe-redesign-header">
-            <div class="recipe-name-field">
-              <span class="eyebrow">Recipe</span>
-              <strong>Working Recipe</strong>
-            </div>
-            <div class="recipe-select-field">
-              <span>Select</span>
-              <ParamInput
-                title="Recipe"
-                numpadLabel="Select - Recipe"
-                value={recipeDraft}
-                min={0}
-                max={recipeMax}
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onchange={(value) => (recipeDraft = clamp(value, 0, recipeMax))}
-              />
-            </div>
-            <div class="recipe-select-field">
-              <span>Pattern</span>
-              <ParamInput
-                title="Index"
-                numpadLabel="Pattern - Index"
-                value={patternDraft}
-                min={1}
-                max={patternMax}
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onchange={(value) => (patternDraft = clamp(value, 1, patternMax))}
-              />
-            </div>
-            <div class="recipe-icon-actions">
-              <button
-                type="button"
-                class="icon-command"
-                aria-label="Load Recipe"
-                title="Load selected recipe"
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onclick={() => requestRecipeCommand('Load')}
-              >
-                <ChevronRight size={24} />
-              </button>
-              <button
-                type="button"
-                class="icon-command"
-                aria-label="Apply Pattern"
-                title="Apply pattern index"
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onclick={requestPatternWrite}
-              >
-                <SlidersHorizontal size={24} />
-              </button>
-              <button
-                type="button"
-                class="icon-command"
-                aria-label="Save Recipe"
-                title="Save recipe"
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onclick={() => requestRecipeCommand('Save')}
-              >
-                <SaveIcon size={24} />
-              </button>
-              <button
-                type="button"
-                class="icon-command warning"
-                aria-label="Discard Recipe"
-                title="Discard recipe changes"
-                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                onclick={() => requestRecipeCommand('Discard')}
-              >
-                <XIcon size={26} />
-              </button>
-            </div>
-            <StatusBanner
-              online={connectionOnline()}
-              label={connectionOnline() ? 'PLC Command Path Ready' : 'PLC Command Path Offline'}
-              detail={recipeError || recipeMessage || recipePendingText()}
-            />
-          </section>
-
-          <section class="recipe-readbacks" aria-label="Recipe readback">
+        <section class="main-page-header {readinessTone()}" aria-labelledby="main-page-title">
+          <span class="eyebrow">Main Page</span>
+          <h2 id="main-page-title">{headlineText()}</h2>
+          <p>{headlineDetail()}</p>
+          <div class="main-page-demand">
             <ValueDisplay
-              label="Active recipe"
-              value={values['recipe.activeIndex']}
-              quality={recipeQuality('recipe.activeIndex')}
+              label="Tray target"
+              value={values['parameters.trayDemand.target']}
+              quality={valueQuality('parameters.trayDemand.target')}
             />
             <ValueDisplay
-              label="Selected recipe"
-              value={values['recipe.selectedIndex']}
-              quality={recipeQuality('recipe.selectedIndex')}
-            />
-            <ValueDisplay
-              label="Pattern index"
-              value={values['pattern.index']}
-              quality={recipeQuality('pattern.index')}
+              label="Tray actual"
+              value={values['parameters.trayDemand.actual']}
+              quality={valueQuality('parameters.trayDemand.actual')}
             />
             <SensorChip
-              label="Unsaved changes"
-              value={values['recipe.hasUnsavedChanges']}
-              quality={recipeQuality('recipe.hasUnsavedChanges')}
-              activeLabel="Yes"
-              inactiveLabel="No"
+              label="Demand enabled"
+              value={values['parameters.trayDemand.enabled']}
+              quality={valueQuality('parameters.trayDemand.enabled')}
+              activeLabel="Enabled"
+              inactiveLabel="Disabled"
             />
-          </section>
-
-          <section class="recipe-parameter-surface" aria-label="Recipe parameter editor">
-            <button
-              type="button"
-              class="recipe-page-arrow"
-              aria-label="Previous recipe section"
-              onclick={() => moveRecipeSection(-1)}
-            >
-              <ChevronLeft size={30} />
-            </button>
-
-            <div class="recipe-parameter-panel">
-              {#if activeRecipeSection === 'gluing'}
-                <section class="recipe-tab-page" aria-label="Gluing recipe parameters">
-                  <div class="recipe-window-grid">
-                    {#each glueWindows as window}
-                      <ParamRow label="{window.label} ms">
-                        <ParamInput
-                          title="Start"
-                          unit="ms"
-                          value={parameterValue(window.startKey)}
-                          {...contractBounds(window.startKey)}
-                          disabled={parameterWriteDisabled(window.startKey)}
-                          onchange={(value) =>
-                            requestParameterWrite(
-                              window.startKey,
-                              normalizeParameterValue(window.startKey, value),
-                              `${window.label} start`,
-                            )}
-                        />
-                        <ParamInput
-                          title="Stop"
-                          unit="ms"
-                          value={parameterValue(window.stopKey)}
-                          {...contractBounds(window.stopKey)}
-                          disabled={parameterWriteDisabled(window.stopKey)}
-                          onchange={(value) =>
-                            requestParameterWrite(
-                              window.stopKey,
-                              normalizeParameterValue(window.stopKey, value),
-                              `${window.label} stop`,
-                            )}
-                        />
-                      </ParamRow>
-                    {/each}
-                  </div>
-
-                  <div class="glue-gun-grid" aria-label="Glue gun controls">
-                    {#each glueGuns as gun}
-                      <article class="glue-gun-card" data-quality={recipeQuality(gun.enableKey)}>
-                        <button
-                          type="button"
-                          class:active={Boolean(values[gun.enableKey])}
-                          disabled={parameterWriteDisabled(gun.enableKey)}
-                          onclick={() => requestGunToggle(gun)}
-                        >
-                          {gun.label}
-                        </button>
-                        <ParamInput
-                          title="Offset"
-                          unit="ms"
-                          value={parameterValue(gun.offsetKey)}
-                          {...contractBounds(gun.offsetKey)}
-                          disabled={parameterWriteDisabled(gun.offsetKey)}
-                          onchange={(value) =>
-                            requestParameterWrite(
-                              gun.offsetKey,
-                              normalizeParameterValue(gun.offsetKey, value),
-                              `${gun.label} offset`,
-                            )}
-                        />
-                      </article>
-                    {/each}
-                  </div>
-                </section>
-              {:else if activeRecipeSection === 'forming'}
-                <section class="recipe-tab-page" aria-label="Forming recipe parameters">
-                  <div class="forming-grid">
-                    {#each formingStations as station}
-                      <ParamRow label="{station.label} ms">
-                        <ParamInput
-                          title="Start"
-                          unit="ms"
-                          value={parameterValue(station.startKey)}
-                          {...contractBounds(station.startKey)}
-                          disabled={parameterWriteDisabled(station.startKey)}
-                          onchange={(value) =>
-                            requestParameterWrite(
-                              station.startKey,
-                              normalizeParameterValue(station.startKey, value),
-                              `${station.label} start`,
-                            )}
-                        />
-                        <ParamInput
-                          title="Stop"
-                          unit="ms"
-                          value={parameterValue(station.stopKey)}
-                          {...contractBounds(station.stopKey)}
-                          disabled={parameterWriteDisabled(station.stopKey)}
-                          onchange={(value) =>
-                            requestParameterWrite(
-                              station.stopKey,
-                              normalizeParameterValue(station.stopKey, value),
-                              `${station.label} stop`,
-                            )}
-                        />
-                      </ParamRow>
-                    {/each}
-                  </div>
-                </section>
-              {:else}
-                <section class="recipe-tab-page" aria-label="Vacuum recipe parameters">
-                  <div class="forming-grid">
-                    {#each vacuumParameters as parameter}
-                      {#if parameter.valueKey}
-                        <ParamRow label="{parameter.label} ms">
-                          <ParamInput
-                            title="Timer"
-                            unit="ms"
-                            value={parameterValue(parameter.valueKey)}
-                            {...contractBounds(parameter.valueKey)}
-                            disabled={parameterWriteDisabled(parameter.valueKey)}
-                            onchange={(value) =>
-                              requestParameterWrite(
-                                parameter.valueKey,
-                                normalizeParameterValue(parameter.valueKey, value),
-                                parameter.label,
-                              )}
-                          />
-                        </ParamRow>
-                      {:else}
-                        <ParamRow label="{parameter.label} ms">
-                          <ParamInput
-                            title="Start"
-                            unit="ms"
-                            value={parameterValue(parameter.startKey)}
-                            {...contractBounds(parameter.startKey)}
-                            disabled={parameterWriteDisabled(parameter.startKey)}
-                            onchange={(value) =>
-                              requestParameterWrite(
-                                parameter.startKey,
-                                normalizeParameterValue(parameter.startKey, value),
-                                `${parameter.label} start`,
-                              )}
-                          />
-                          <ParamInput
-                            title="Stop"
-                            unit="ms"
-                            value={parameterValue(parameter.stopKey)}
-                            {...contractBounds(parameter.stopKey)}
-                            disabled={parameterWriteDisabled(parameter.stopKey)}
-                            onchange={(value) =>
-                              requestParameterWrite(
-                                parameter.stopKey,
-                                normalizeParameterValue(parameter.stopKey, value),
-                                `${parameter.label} stop`,
-                              )}
-                          />
-                        </ParamRow>
-                      {/if}
-                    {/each}
-                  </div>
-                </section>
-              {/if}
-
-              <nav class="recipe-section-tabs" aria-label="Recipe parameter sections">
-                {#each recipeSections as section}
-                  <button
-                    type="button"
-                    class:active={activeRecipeSection === section.id}
-                    onclick={() => (activeRecipeSection = section.id)}
-                  >
-                    {section.label}
-                  </button>
-                {/each}
-              </nav>
-            </div>
-
-            <button
-              type="button"
-              class="recipe-page-arrow"
-              aria-label="Next recipe section"
-              onclick={() => moveRecipeSection(1)}
-            >
-              <ChevronRight size={30} />
-            </button>
-          </section>
-
-          {#if recipeError}
-            <p class="recipe-alert danger">{recipeError}</p>
-          {:else if recipeMessage}
-            <p class="recipe-alert">{recipeMessage}</p>
-          {/if}
+          </div>
         </section>
-      {:else if activeView === 'diagnostics'}
-        <section class="diagnostics-layout" aria-label="Manual and IO diagnostics">
-          <section class="diagnostics-header">
-            <div>
-              <span class="eyebrow">Manual &amp; IO</span>
-              <h2>Diagnostics</h2>
-            </div>
-            <StatusBanner
-              online={connectionOnline() && !diagnosticError}
-              label={connectionOnline() ? 'Diagnostics Connected' : 'Diagnostics Offline'}
-              detail={diagnosticStatusText()}
+
+        <StateMachineHolder
+          label="Machine States"
+          state={enumStateTone('state.machine', 'E_MachineStates')}
+        >
+          {#each machineStateReadouts as item}
+            <StateMachineChip
+              label={enumLabel(item.enumName, values[item.key])}
+              state={enumStateTone(item.key, item.enumName)}
             />
-            <label class="service-toggle">
-              <input
-                type="checkbox"
-                checked={serviceEnabled}
-                onchange={(event) => (serviceEnabled = event.currentTarget.checked)}
+          {/each}
+        </StateMachineHolder>
+
+        <StateMachineHolder
+          label="Safety"
+          state={groupTone(
+            safetyStates.map((item) => item.key),
+            true,
+          )}
+        >
+          {#each safetyStates as item}
+            <SensorChip
+              label={item.label}
+              value={values[item.key]}
+              quality={valueQuality(item.key)}
+              activeLabel={item.activeLabel}
+              inactiveLabel={item.inactiveLabel}
+            />
+          {/each}
+        </StateMachineHolder>
+
+        <StateMachineHolder
+          label="Tray Position"
+          state={groupTone(trayPositionStates.map((item) => item.key))}
+        >
+          {#each trayPositionStates as item}
+            <SensorChip
+              label={item.label}
+              value={values[item.key]}
+              quality={valueQuality(item.key)}
+              activeLabel={item.activeLabel}
+              inactiveLabel={item.inactiveLabel}
+            />
+          {/each}
+          <ValueDisplay
+            label="Gluing position"
+            value={values['tray.position.gluing']}
+            quality={valueQuality('tray.position.gluing')}
+          />
+          <ValueDisplay
+            label="Forming position"
+            value={values['tray.position.forming']}
+            quality={valueQuality('tray.position.forming')}
+          />
+        </StateMachineHolder>
+
+        <section class="performance">
+          <span class="performance-label">Performance</span>
+          <div class="performance-values">
+            {#each performanceReadouts as readout}
+              <ValueDisplay
+                label={readout.label}
+                value={values[readout.key]}
+                quality={valueQuality(readout.key)}
               />
-              <span>Service Enable</span>
-            </label>
-          </section>
-
-          <section class="coil-grid" aria-label="Coil diagnostics">
-            {#each diagnosticCoils as coil}
-              <article class="coil-card">
-                <div class="coil-card-head">
-                  <h3>{coil.label}</h3>
-                  <strong>{forceStatus(values[coil.statusKey])}</strong>
-                </div>
-                <SensorChip
-                  label="Output"
-                  value={values[coil.outKey]}
-                  quality={diagnosticQuality(coil.outKey)}
-                  activeLabel="On"
-                  inactiveLabel="Off"
-                />
-                <ValueDisplay
-                  label="Force status"
-                  value={forceStatus(values[coil.statusKey])}
-                  quality={diagnosticQuality(coil.statusKey)}
-                />
-                <div class="force-actions">
-                  <button
-                    class="kita-button secondary"
-                    type="button"
-                    aria-label="Return Auto {coil.label}"
-                    disabled={forceButtonDisabled(coil)}
-                    onclick={() => requestForce(coil, 'Auto')}
-                  >
-                    Auto
-                  </button>
-                  <button
-                    class="kita-button"
-                    type="button"
-                    aria-label="Force On {coil.label}"
-                    disabled={forceButtonDisabled(coil)}
-                    onclick={() => requestForce(coil, 'On')}
-                  >
-                    On
-                  </button>
-                  <button
-                    class="kita-button danger"
-                    type="button"
-                    aria-label="Force Off {coil.label}"
-                    disabled={forceButtonDisabled(coil)}
-                    onclick={() => requestForce(coil, 'Off')}
-                  >
-                    Off
-                  </button>
-                </div>
-              </article>
             {/each}
-          </section>
-        </section>
-      {:else if activeView === 'events'}
-        <section class="events-layout" aria-label="Alarm and event surface">
-          <section class="events-header">
-            <div>
-              <span class="eyebrow">Events</span>
-              <h2>Event Surface</h2>
-            </div>
-            <StatusBanner
-              online={connectionOnline() && eventStatus === 'No Active Conditions'}
-              label={eventStatus}
-              detail={status.message}
-            />
-          </section>
-
-          <section class="event-contract-note" aria-label="PLC alarm contract status">
-            <div>
-              <span class="eyebrow">PLC Alarm Contract</span>
-              <strong>Not present</strong>
-            </div>
-            <div>
-              <span>Ack / Reset</span>
-              <strong>Unavailable</strong>
-            </div>
-            <div>
-              <span>Decision</span>
-              <strong>0009</strong>
-            </div>
-          </section>
-
-          <section class="event-list" aria-label="Current event conditions">
-            {#each eventRows as row}
-              <article class="event-row severity-{row.severity}" data-quality={row.quality}>
-                <div>
-                  <span>{eventSeverityLabel(row.severity)}</span>
-                  <h3>{row.title}</h3>
-                  <p>{row.detail}</p>
-                </div>
-                <strong>{row.source}</strong>
-              </article>
-            {/each}
-          </section>
-        </section>
-      {:else}
-        <section class="page-placeholder">
-          <span class="eyebrow">{pageTitle()}</span>
-          <h2>{pageTitle()}</h2>
-          <div class="foundation-layout">
-            <StatusBanner
-              online={connectionOnline()}
-              label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
-              detail={status.message}
-            />
-            <div class="state-chip-row" aria-label="Machine state examples">
-              <StateMachineChip state={0} />
-              <StateMachineChip state={3} />
-              <StateMachineChip state={4} />
-              <StateMachineChip state={7} />
-            </div>
-          </div>
-          <div class="placeholder-grid">
-            <article>
-              <AlarmClock size={24} />
-              <strong>{formatValue(values['metrics.lastCycleTimeMs'])}</strong>
-              <span>Last cycle ms</span>
-            </article>
-            <article>
-              <Gauge size={24} />
-              <strong>{formatValue(values['pattern.index'])}</strong>
-              <span>Pattern</span>
-            </article>
-            <article>
-              <Activity size={24} />
-              <strong>{formatValue(values['metrics.traysPerMinute'])}</strong>
-              <span>Trays/min</span>
-            </article>
           </div>
         </section>
-      {/if}
-    </section>
-  </div>
+      </section>
+    {:else if activeView === 'recipe'}
+      <section class="recipe-layout" aria-label="Recipe and pattern controls">
+        <section class="recipe-redesign-header">
+          <div class="recipe-name-field">
+            <span class="eyebrow">Recipe</span>
+            <strong>Working Recipe</strong>
+          </div>
+          <div class="recipe-select-field">
+            <span>Select</span>
+            <ParamInput
+              title="Recipe"
+              numpadLabel="Select - Recipe"
+              value={recipeDraft}
+              min={0}
+              max={recipeMax}
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onchange={(value) => (recipeDraft = clamp(value, 0, recipeMax))}
+            />
+          </div>
+          <div class="recipe-select-field">
+            <span>Pattern</span>
+            <ParamInput
+              title="Index"
+              numpadLabel="Pattern - Index"
+              value={patternDraft}
+              min={1}
+              max={patternMax}
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onchange={(value) => (patternDraft = clamp(value, 1, patternMax))}
+            />
+          </div>
+          <div class="recipe-icon-actions">
+            <button
+              type="button"
+              class="icon-command"
+              aria-label="Load Recipe"
+              title="Load selected recipe"
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onclick={() => requestRecipeCommand('Load')}
+            >
+              <ChevronRight size={24} />
+            </button>
+            <button
+              type="button"
+              class="icon-command"
+              aria-label="Apply Pattern"
+              title="Apply pattern index"
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onclick={requestPatternWrite}
+            >
+              <SlidersHorizontal size={24} />
+            </button>
+            <button
+              type="button"
+              class="icon-command"
+              aria-label="Save Recipe"
+              title="Save recipe"
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onclick={() => requestRecipeCommand('Save')}
+            >
+              <SaveIcon size={24} />
+            </button>
+            <button
+              type="button"
+              class="icon-command warning"
+              aria-label="Discard Recipe"
+              title="Discard recipe changes"
+              disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+              onclick={() => requestRecipeCommand('Discard')}
+            >
+              <XIcon size={26} />
+            </button>
+          </div>
+          <StatusBanner
+            online={connectionOnline()}
+            label={connectionOnline() ? 'PLC Command Path Ready' : 'PLC Command Path Offline'}
+            detail={recipeError || recipeMessage || recipePendingText()}
+          />
+        </section>
+
+        <section class="recipe-readbacks" aria-label="Recipe readback">
+          <ValueDisplay
+            label="Active recipe"
+            value={values['recipe.activeIndex']}
+            quality={recipeQuality('recipe.activeIndex')}
+          />
+          <ValueDisplay
+            label="Selected recipe"
+            value={values['recipe.selectedIndex']}
+            quality={recipeQuality('recipe.selectedIndex')}
+          />
+          <ValueDisplay
+            label="Pattern index"
+            value={values['pattern.index']}
+            quality={recipeQuality('pattern.index')}
+          />
+          <SensorChip
+            label="Unsaved changes"
+            value={values['recipe.hasUnsavedChanges']}
+            quality={recipeQuality('recipe.hasUnsavedChanges')}
+            activeLabel="Yes"
+            inactiveLabel="No"
+          />
+        </section>
+
+        <section class="recipe-parameter-surface" aria-label="Recipe parameter editor">
+          <button
+            type="button"
+            class="recipe-page-arrow"
+            aria-label="Previous recipe section"
+            onclick={() => moveRecipeSection(-1)}
+          >
+            <ChevronLeft size={30} />
+          </button>
+
+          <div class="recipe-parameter-panel">
+            {#if activeRecipeSection === 'gluing'}
+              <section class="recipe-tab-page" aria-label="Gluing recipe parameters">
+                <div class="recipe-window-grid">
+                  {#each glueWindows as window}
+                    <ParamRow label="{window.label} ms">
+                      <ParamInput
+                        title="Start"
+                        unit="ms"
+                        value={parameterValue(window.startKey)}
+                        {...contractBounds(window.startKey)}
+                        disabled={parameterWriteDisabled(window.startKey)}
+                        onchange={(value) =>
+                          requestParameterWrite(
+                            window.startKey,
+                            normalizeParameterValue(window.startKey, value),
+                            `${window.label} start`,
+                          )}
+                      />
+                      <ParamInput
+                        title="Stop"
+                        unit="ms"
+                        value={parameterValue(window.stopKey)}
+                        {...contractBounds(window.stopKey)}
+                        disabled={parameterWriteDisabled(window.stopKey)}
+                        onchange={(value) =>
+                          requestParameterWrite(
+                            window.stopKey,
+                            normalizeParameterValue(window.stopKey, value),
+                            `${window.label} stop`,
+                          )}
+                      />
+                    </ParamRow>
+                  {/each}
+                </div>
+
+                <div class="glue-gun-grid" aria-label="Glue gun controls">
+                  {#each glueGuns as gun}
+                    <article class="glue-gun-card" data-quality={recipeQuality(gun.enableKey)}>
+                      <button
+                        type="button"
+                        class:active={Boolean(values[gun.enableKey])}
+                        disabled={parameterWriteDisabled(gun.enableKey)}
+                        onclick={() => requestGunToggle(gun)}
+                      >
+                        {gun.label}
+                      </button>
+                      <ParamInput
+                        title="Offset"
+                        unit="ms"
+                        value={parameterValue(gun.offsetKey)}
+                        {...contractBounds(gun.offsetKey)}
+                        disabled={parameterWriteDisabled(gun.offsetKey)}
+                        onchange={(value) =>
+                          requestParameterWrite(
+                            gun.offsetKey,
+                            normalizeParameterValue(gun.offsetKey, value),
+                            `${gun.label} offset`,
+                          )}
+                      />
+                    </article>
+                  {/each}
+                </div>
+              </section>
+            {:else if activeRecipeSection === 'forming'}
+              <section class="recipe-tab-page" aria-label="Forming recipe parameters">
+                <div class="forming-grid">
+                  {#each formingStations as station}
+                    <ParamRow label="{station.label} ms">
+                      <ParamInput
+                        title="Start"
+                        unit="ms"
+                        value={parameterValue(station.startKey)}
+                        {...contractBounds(station.startKey)}
+                        disabled={parameterWriteDisabled(station.startKey)}
+                        onchange={(value) =>
+                          requestParameterWrite(
+                            station.startKey,
+                            normalizeParameterValue(station.startKey, value),
+                            `${station.label} start`,
+                          )}
+                      />
+                      <ParamInput
+                        title="Stop"
+                        unit="ms"
+                        value={parameterValue(station.stopKey)}
+                        {...contractBounds(station.stopKey)}
+                        disabled={parameterWriteDisabled(station.stopKey)}
+                        onchange={(value) =>
+                          requestParameterWrite(
+                            station.stopKey,
+                            normalizeParameterValue(station.stopKey, value),
+                            `${station.label} stop`,
+                          )}
+                      />
+                    </ParamRow>
+                  {/each}
+                </div>
+              </section>
+            {:else}
+              <section class="recipe-tab-page" aria-label="Vacuum recipe parameters">
+                <div class="forming-grid">
+                  {#each vacuumParameters as parameter}
+                    {#if parameter.valueKey}
+                      <ParamRow label="{parameter.label} ms">
+                        <ParamInput
+                          title="Timer"
+                          unit="ms"
+                          value={parameterValue(parameter.valueKey)}
+                          {...contractBounds(parameter.valueKey)}
+                          disabled={parameterWriteDisabled(parameter.valueKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              parameter.valueKey,
+                              normalizeParameterValue(parameter.valueKey, value),
+                              parameter.label,
+                            )}
+                        />
+                      </ParamRow>
+                    {:else}
+                      <ParamRow label="{parameter.label} ms">
+                        <ParamInput
+                          title="Start"
+                          unit="ms"
+                          value={parameterValue(parameter.startKey)}
+                          {...contractBounds(parameter.startKey)}
+                          disabled={parameterWriteDisabled(parameter.startKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              parameter.startKey,
+                              normalizeParameterValue(parameter.startKey, value),
+                              `${parameter.label} start`,
+                            )}
+                        />
+                        <ParamInput
+                          title="Stop"
+                          unit="ms"
+                          value={parameterValue(parameter.stopKey)}
+                          {...contractBounds(parameter.stopKey)}
+                          disabled={parameterWriteDisabled(parameter.stopKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              parameter.stopKey,
+                              normalizeParameterValue(parameter.stopKey, value),
+                              `${parameter.label} stop`,
+                            )}
+                        />
+                      </ParamRow>
+                    {/if}
+                  {/each}
+                </div>
+              </section>
+            {/if}
+
+            <nav class="recipe-section-tabs" aria-label="Recipe parameter sections">
+              {#each recipeSections as section}
+                <SubNavButton
+                  label={section.label}
+                  active={activeRecipeSection === section.id}
+                  onclick={() => (activeRecipeSection = section.id)}
+                />
+              {/each}
+            </nav>
+          </div>
+
+          <button
+            type="button"
+            class="recipe-page-arrow"
+            aria-label="Next recipe section"
+            onclick={() => moveRecipeSection(1)}
+          >
+            <ChevronRight size={30} />
+          </button>
+        </section>
+
+        {#if recipeError}
+          <p class="recipe-alert danger">{recipeError}</p>
+        {:else if recipeMessage}
+          <p class="recipe-alert">{recipeMessage}</p>
+        {/if}
+      </section>
+    {:else if activeView === 'diagnostics'}
+      <section class="diagnostics-layout" aria-label="Manual and IO diagnostics">
+        <section class="diagnostics-header">
+          <div>
+            <span class="eyebrow">Manual &amp; IO</span>
+            <h2>Diagnostics</h2>
+          </div>
+          <StatusBanner
+            online={connectionOnline() && !diagnosticError}
+            label={connectionOnline() ? 'Diagnostics Connected' : 'Diagnostics Offline'}
+            detail={diagnosticStatusText()}
+          />
+          <label class="service-toggle">
+            <input
+              type="checkbox"
+              checked={serviceEnabled}
+              onchange={(event) => (serviceEnabled = event.currentTarget.checked)}
+            />
+            <span>Service Enable</span>
+          </label>
+        </section>
+
+        <section class="coil-grid" aria-label="Coil diagnostics">
+          {#each diagnosticCoils as coil}
+            <article class="coil-card">
+              <div class="coil-card-head">
+                <h3>{coil.label}</h3>
+                <strong>{forceStatus(values[coil.statusKey])}</strong>
+              </div>
+              <SensorChip
+                label="Output"
+                value={values[coil.outKey]}
+                quality={diagnosticQuality(coil.outKey)}
+                activeLabel="On"
+                inactiveLabel="Off"
+              />
+              <ValueDisplay
+                label="Force status"
+                value={forceStatus(values[coil.statusKey])}
+                quality={diagnosticQuality(coil.statusKey)}
+              />
+              <div class="force-actions">
+                <button
+                  class="kita-button secondary"
+                  type="button"
+                  aria-label="Return Auto {coil.label}"
+                  disabled={forceButtonDisabled(coil)}
+                  onclick={() => requestForce(coil, 'Auto')}
+                >
+                  Auto
+                </button>
+                <button
+                  class="kita-button"
+                  type="button"
+                  aria-label="Force On {coil.label}"
+                  disabled={forceButtonDisabled(coil)}
+                  onclick={() => requestForce(coil, 'On')}
+                >
+                  On
+                </button>
+                <button
+                  class="kita-button danger"
+                  type="button"
+                  aria-label="Force Off {coil.label}"
+                  disabled={forceButtonDisabled(coil)}
+                  onclick={() => requestForce(coil, 'Off')}
+                >
+                  Off
+                </button>
+              </div>
+            </article>
+          {/each}
+        </section>
+      </section>
+    {:else if activeView === 'events'}
+      <section class="events-layout" aria-label="Alarm and event surface">
+        <section class="events-header">
+          <div>
+            <span class="eyebrow">Events</span>
+            <h2>Event Surface</h2>
+          </div>
+          <StatusBanner
+            online={connectionOnline() && eventStatus === 'No Active Conditions'}
+            label={eventStatus}
+            detail={status.message}
+          />
+        </section>
+
+        <section class="event-contract-note" aria-label="PLC alarm contract status">
+          <div>
+            <span class="eyebrow">PLC Alarm Contract</span>
+            <strong>Not present</strong>
+          </div>
+          <div>
+            <span>Ack / Reset</span>
+            <strong>Unavailable</strong>
+          </div>
+          <div>
+            <span>Decision</span>
+            <strong>0009</strong>
+          </div>
+        </section>
+
+        <section class="event-list" aria-label="Current event conditions">
+          {#each eventRows as row}
+            <article class="event-row severity-{row.severity}" data-quality={row.quality}>
+              <div>
+                <span>{eventSeverityLabel(row.severity)}</span>
+                <h3>{row.title}</h3>
+                <p>{row.detail}</p>
+              </div>
+              <strong>{row.source}</strong>
+            </article>
+          {/each}
+        </section>
+      </section>
+    {:else}
+      <section class="page-placeholder">
+        <span class="eyebrow">{pageTitle()}</span>
+        <h2>{pageTitle()}</h2>
+        <div class="foundation-layout">
+          <StatusBanner
+            online={connectionOnline()}
+            label={connectionOnline() ? 'PLC Connected' : 'PLC Disconnected'}
+            detail={status.message}
+          />
+          <div class="state-chip-row" aria-label="Machine state examples">
+            <StateMachineChip state={0} />
+            <StateMachineChip state={3} />
+            <StateMachineChip state={4} />
+            <StateMachineChip state={7} />
+          </div>
+        </div>
+        <div class="placeholder-grid">
+          <article>
+            <AlarmClock size={24} />
+            <strong>{formatValue(values['metrics.lastCycleTimeMs'])}</strong>
+            <span>Last cycle ms</span>
+          </article>
+          <article>
+            <Gauge size={24} />
+            <strong>{formatValue(values['pattern.index'])}</strong>
+            <span>Pattern</span>
+          </article>
+          <article>
+            <Activity size={24} />
+            <strong>{formatValue(values['metrics.traysPerMinute'])}</strong>
+            <span>Trays/min</span>
+          </article>
+        </div>
+      </section>
+    {/if}
+  </section>
+
+  <footer class="shell-footer">
+    <div class="footer-chips" aria-label="Panel status pills">
+      <FooterPill
+        label={readinessText()}
+        state={enumStateTone('state.machine', 'E_MachineStates')}
+      />
+      <FooterPill
+        label={eventStatus}
+        state={eventStatus === 'No Active Conditions' ? 'running' : 'faulted'}
+      />
+      <FooterPill
+        label={`Fault Count ${formatValue(values['machine.activeFaultCount'], 'Unknown')}`}
+        state={values['machine.activeFaultCount'] ? 'faulted' : 'inactive'}
+      />
+      <FooterPill
+        label={`Tray ${formatValue(values['parameters.trayDemand.actual'], 'Unknown')} / ${formatValue(
+          values['parameters.trayDemand.target'],
+          'Unknown',
+        )}`}
+        state={valueQuality('parameters.trayDemand.actual') === 'live' ? 'running' : 'waiting'}
+      />
+    </div>
+    <span class="tpm">{formatValue(values['metrics.traysPerMinute'], '0.00')} TPM</span>
+  </footer>
 </main>
 
 <ConfirmDialog

@@ -27,13 +27,12 @@
 
 <style>
   .sensor-chip {
-    min-height: 44px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 24px;
+    display: flex;
     align-items: center;
-    gap: var(--kita-space-2);
+    gap: 6px;
     border-radius: var(--kita-radius-chip);
-    padding: var(--kita-space-2) var(--kita-space-3);
+    padding: 0 10px;
     background: var(--kita-chip-inactive-bg);
     color: var(--kita-chip-inactive-fg);
   }
@@ -62,22 +61,20 @@
   }
 
   span {
-    font-size: var(--kita-font-xs);
-    font-weight: 850;
+    font-size: 11px;
+    font-weight: 700;
   }
 
   strong {
-    justify-self: end;
-    font-size: var(--kita-font-xs);
-    font-weight: 950;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
   }
 
   small {
-    grid-column: 1 / -1;
     color: inherit;
-    font-size: var(--kita-font-xs);
-    font-weight: 800;
+    font-size: 10px;
+    font-weight: 700;
     opacity: 0.84;
     text-transform: uppercase;
   }

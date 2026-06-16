@@ -74,6 +74,8 @@
     );
   --kita-meter-bg: rgba(29, 29, 61, 0.72);
   --kita-shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --kita-shadow-header: 0 4px 8px rgba(0, 0, 0, 0.25);
+  --kita-shadow-status-dot: 0 0 6px rgba(255, 255, 255, 0.45);
 
   background: var(--kita-bg-page);
   color: var(--kita-text-primary);
@@ -1347,4 +1349,230 @@ p {
   .event-contract-note {
     grid-template-columns: 1fr;
   }
+}
+
+/* Live reference shell correction: fixed retrofit panel, 800x480, no scrollbars. */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.app-shell {
+  width: min(100vw, 800px);
+  height: min(100vh, 480px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--kita-bg-page);
+}
+
+.topbar {
+  height: 52px;
+  flex: 0 0 52px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 0;
+  padding: 0 24px;
+  background: var(--kita-bg-header);
+  box-shadow: var(--kita-shadow-header);
+}
+
+.brand {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.brand-name {
+  color: var(--kita-text-primary);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.brand-sub {
+  color: var(--kita-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.top-nav {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.connection-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: var(--kita-radius-round);
+  background: var(--kita-chip-faulted-bg);
+}
+
+.connection-dot.online {
+  background: var(--kita-chip-running-bg);
+  box-shadow: 0 0 6px var(--kita-chip-running-bg);
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: block;
+  overflow: hidden;
+  padding: 8px 24px;
+}
+
+.overview-layout {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.status-row {
+  flex: 0 0 auto;
+}
+
+.main-page-header {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(178px, 220px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 2px 14px;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.main-page-header::before {
+  content: '';
+  grid-row: 1 / 4;
+  width: 0;
+}
+
+.main-page-header .eyebrow,
+.main-page-header h2,
+.main-page-header p {
+  grid-column: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.main-page-header h2 {
+  color: var(--kita-text-primary);
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.main-page-header p {
+  color: var(--kita-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.main-page-demand {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+}
+
+.performance {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.performance-label {
+  min-width: 92px;
+  justify-content: flex-start;
+  color: var(--kita-text-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.performance-values {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  flex: 1;
+}
+
+.shell-footer {
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--kita-border);
+  padding: 6px 24px;
+  background: var(--kita-bg-header);
+}
+
+.footer-chips {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.tpm {
+  flex: 0 0 auto;
+  color: var(--kita-text-muted);
+  font-family: var(--kita-font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.recipe-layout,
+.diagnostics-layout,
+.events-layout,
+.page-placeholder {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.recipe-parameter-surface,
+.recipe-parameter-panel,
+.recipe-tab-page {
+  overflow: hidden;
 }

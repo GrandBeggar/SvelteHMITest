@@ -18,33 +18,32 @@
 
 <style>
   .status-banner {
-    min-height: 58px;
+    min-height: 34px;
     display: flex;
     align-items: center;
-    gap: var(--kita-space-3);
-    border: 1px solid var(--kita-chip-faulted-bg);
-    border-radius: var(--kita-radius-panel);
-    padding: var(--kita-space-3);
-    background: var(--kita-status-offline-bg);
-    color: var(--kita-chip-faulted-fg);
+    gap: 8px;
+    border-radius: 4px;
+    padding: 7px 12px;
+    background: var(--kita-chip-faulted-bg);
+    color: var(--kita-chip-fg);
   }
 
   .status-banner.online {
-    border-color: var(--kita-chip-running-bg);
-    background: var(--kita-status-online-bg);
+    background: var(--kita-chip-running-bg);
     color: var(--kita-chip-fg);
   }
 
   .status-dot {
-    width: 14px;
-    height: 14px;
+    width: 10px;
+    height: 10px;
     flex: 0 0 auto;
     border-radius: var(--kita-radius-round);
-    background: var(--kita-chip-faulted-bg);
+    background: var(--kita-chip-fg);
+    box-shadow: var(--kita-shadow-status-dot);
   }
 
   .status-banner.online .status-dot {
-    background: var(--kita-chip-running-bg);
+    background: var(--kita-chip-fg);
   }
 
   strong,
@@ -53,15 +52,16 @@
   }
 
   strong {
-    font-size: var(--kita-font-sm);
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
   }
 
   span {
-    margin-top: var(--kita-space-1);
-    color: var(--kita-text-muted);
-    font-size: var(--kita-font-xs);
-    font-weight: 800;
+    margin-top: 1px;
+    color: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.86;
   }
 </style>

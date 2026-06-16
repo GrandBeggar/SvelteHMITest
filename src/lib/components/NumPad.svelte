@@ -98,31 +98,31 @@
     width: min(320px, 82vw);
     display: flex;
     flex-direction: column;
-    gap: var(--kita-space-3);
-    padding: var(--kita-space-4);
+    gap: 7px;
+    padding: 10px;
   }
 
   header {
     display: grid;
-    gap: var(--kita-space-2);
+    gap: 5px;
   }
 
   h3 {
     margin: 0;
     color: var(--kita-text-primary);
-    font-size: var(--kita-font-md);
+    font-size: 13px;
     text-align: center;
     text-transform: uppercase;
   }
 
   .current {
-    min-height: 42px;
+    min-height: 30px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--kita-space-3);
+    gap: var(--kita-space-2);
     border-radius: var(--kita-radius-control);
-    padding: 0 var(--kita-space-3);
+    padding: 0 var(--kita-space-2);
     background: var(--kita-bg-inset);
   }
 
@@ -139,33 +139,33 @@
   }
 
   .entry {
-    min-height: 58px;
+    min-height: 38px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     border: 1px solid var(--kita-border-emphasis);
     border-radius: var(--kita-radius-control);
-    padding: 0 var(--kita-space-4);
+    padding: 0 var(--kita-space-3);
     background: var(--kita-bg-page);
     color: var(--kita-text-primary);
-    font-size: var(--kita-font-xxl);
+    font-size: var(--kita-font-xl);
     font-weight: 800;
   }
 
   .keys {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--kita-space-2);
+    gap: 4px;
   }
 
   .key {
-    min-height: 56px;
+    min-height: 38px;
     border: 1px solid var(--kita-border);
     border-radius: var(--kita-radius-control);
     background: var(--kita-bg-inset);
     color: var(--kita-text-primary);
     font: inherit;
-    font-size: var(--kita-font-xl);
+    font-size: var(--kita-font-md);
     font-weight: 800;
     cursor: pointer;
   }
@@ -182,6 +182,11 @@
   footer {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--kita-space-2);
+    gap: 4px;
+  }
+
+  footer .kita-button {
+    min-height: 34px;
+    padding: 0 var(--kita-space-2);
   }
 </style>
