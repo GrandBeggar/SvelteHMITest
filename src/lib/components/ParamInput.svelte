@@ -8,11 +8,13 @@
     value = 0,
     min = undefined,
     max = undefined,
+    disabled = false,
+    numpadLabel = '',
     onchange = () => {},
   } = $props();
 
   const getRowLabel = getContext('paramRowLabel') ?? (() => '');
-  const numpadLabel = $derived([getRowLabel(), title].filter(Boolean).join(' - '));
+  const dialogLabel = $derived(numpadLabel || [getRowLabel(), title].filter(Boolean).join(' - '));
   let numpadOpen = $state(false);
 
   function accept(nextValue) {
@@ -24,7 +26,7 @@
   {#if title}
     <span class="param-title">{title}</span>
   {/if}
-  <button class="param-box" type="button" onclick={() => (numpadOpen = true)}>
+  <button class="param-box" type="button" {disabled} onclick={() => (numpadOpen = true)}>
     <span class="param-value">{value}</span>
     {#if unit}
       <span class="param-unit">{unit}</span>
@@ -34,7 +36,7 @@
 
 <NumPad
   open={numpadOpen}
-  label={numpadLabel}
+  label={dialogLabel}
   currentValue={value}
   {min}
   {max}
@@ -72,6 +74,12 @@
 
   .param-box:active {
     border-color: var(--kita-text-action);
+  }
+
+  .param-box:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
   }
 
   .param-value {

@@ -3,13 +3,17 @@
   import Activity from '@lucide/svelte/icons/activity';
   import AlarmClock from '@lucide/svelte/icons/alarm-clock';
   import Bell from '@lucide/svelte/icons/bell';
+  import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+  import ChevronRight from '@lucide/svelte/icons/chevron-right';
   import Gauge from '@lucide/svelte/icons/gauge';
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
   import Network from '@lucide/svelte/icons/network';
+  import SaveIcon from '@lucide/svelte/icons/save';
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
   import Wifi from '@lucide/svelte/icons/wifi';
   import WifiOff from '@lucide/svelte/icons/wifi-off';
   import Wrench from '@lucide/svelte/icons/wrench';
+  import XIcon from '@lucide/svelte/icons/x';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import ParamInput from '$lib/components/ParamInput.svelte';
   import ParamRow from '$lib/components/ParamRow.svelte';
@@ -17,6 +21,7 @@
   import StateMachineChip from '$lib/components/StateMachineChip.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
   import ValueDisplay from '$lib/components/ValueDisplay.svelte';
+  import { numberBounds } from '$lib/contractRuntime.js';
   import { deriveEventConditions, eventSummary } from '$lib/eventSurface.js';
   import machineContract from '$lib/machine-contract.json';
   import {
@@ -78,6 +83,37 @@
     'parameters.trayDemand.actual',
     'parameters.trayDemand.enabled',
   ];
+  const recipeParameterKeys = [
+    'recipe.pattern.current.leading.start',
+    'recipe.pattern.current.leading.stop',
+    'recipe.pattern.current.trailing.start',
+    'recipe.pattern.current.trailing.stop',
+    'recipe.pattern.current.guns.lh1',
+    'recipe.pattern.current.guns.lh2',
+    'recipe.pattern.current.guns.lh3',
+    'recipe.pattern.current.guns.rh1',
+    'recipe.pattern.current.guns.rh2',
+    'recipe.pattern.current.guns.rh3',
+    'parameters.gluing.lh1Offset',
+    'parameters.gluing.lh2Offset',
+    'parameters.gluing.lh3Offset',
+    'parameters.gluing.rh1Offset',
+    'parameters.gluing.rh2Offset',
+    'parameters.gluing.rh3Offset',
+    'recipe.forming.backStop.start',
+    'recipe.forming.backStop.stop',
+    'recipe.forming.bottomStop.start',
+    'recipe.forming.bottomStop.stop',
+    'recipe.forming.rotary.start',
+    'recipe.forming.rotary.stop',
+    'recipe.forming.sideAlign.start',
+    'recipe.forming.sideAlign.stop',
+    'recipe.forming.compression.start',
+    'recipe.forming.compression.stop',
+    'recipe.vacuum.vacuumOn.start',
+    'recipe.vacuum.vacuumOn.stop',
+    'recipe.vacuum.verifyTimer',
+  ];
   const machineStateReadouts = [
     { key: 'state.machine', label: 'Machine', enumName: 'E_MachineStates' },
     { key: 'state.downstream', label: 'Downstream', enumName: 'E_DownStreamStates' },
@@ -110,6 +146,93 @@
     { key: 'metrics.traysLastHour', label: 'Trays this hour' },
     { key: 'metrics.trayCount', label: 'Trays total' },
     { key: 'metrics.traysPerMinute', label: 'Rate', unit: 'TPM' },
+  ];
+  const recipeSections = [
+    { id: 'gluing', label: 'Gluing' },
+    { id: 'forming', label: 'Forming' },
+    { id: 'vacuum', label: 'Vacuum' },
+  ];
+  const glueWindows = [
+    {
+      label: 'Leading Pattern',
+      startKey: 'recipe.pattern.current.leading.start',
+      stopKey: 'recipe.pattern.current.leading.stop',
+    },
+    {
+      label: 'Trailing Pattern',
+      startKey: 'recipe.pattern.current.trailing.start',
+      stopKey: 'recipe.pattern.current.trailing.stop',
+    },
+  ];
+  const glueGuns = [
+    {
+      label: 'LH3',
+      enableKey: 'recipe.pattern.current.guns.lh3',
+      offsetKey: 'parameters.gluing.lh3Offset',
+    },
+    {
+      label: 'LH2',
+      enableKey: 'recipe.pattern.current.guns.lh2',
+      offsetKey: 'parameters.gluing.lh2Offset',
+    },
+    {
+      label: 'LH1',
+      enableKey: 'recipe.pattern.current.guns.lh1',
+      offsetKey: 'parameters.gluing.lh1Offset',
+    },
+    {
+      label: 'RH1',
+      enableKey: 'recipe.pattern.current.guns.rh1',
+      offsetKey: 'parameters.gluing.rh1Offset',
+    },
+    {
+      label: 'RH2',
+      enableKey: 'recipe.pattern.current.guns.rh2',
+      offsetKey: 'parameters.gluing.rh2Offset',
+    },
+    {
+      label: 'RH3',
+      enableKey: 'recipe.pattern.current.guns.rh3',
+      offsetKey: 'parameters.gluing.rh3Offset',
+    },
+  ];
+  const formingStations = [
+    {
+      label: 'Rotary',
+      startKey: 'recipe.forming.rotary.start',
+      stopKey: 'recipe.forming.rotary.stop',
+    },
+    {
+      label: 'Side Align',
+      startKey: 'recipe.forming.sideAlign.start',
+      stopKey: 'recipe.forming.sideAlign.stop',
+    },
+    {
+      label: 'Back Stop',
+      startKey: 'recipe.forming.backStop.start',
+      stopKey: 'recipe.forming.backStop.stop',
+    },
+    {
+      label: 'Bottom Stop',
+      startKey: 'recipe.forming.bottomStop.start',
+      stopKey: 'recipe.forming.bottomStop.stop',
+    },
+    {
+      label: 'Compression',
+      startKey: 'recipe.forming.compression.start',
+      stopKey: 'recipe.forming.compression.stop',
+    },
+  ];
+  const vacuumParameters = [
+    {
+      label: 'Vacuum On',
+      startKey: 'recipe.vacuum.vacuumOn.start',
+      stopKey: 'recipe.vacuum.vacuumOn.stop',
+    },
+    {
+      label: 'Verify Timer',
+      valueKey: 'recipe.vacuum.verifyTimer',
+    },
   ];
   const forceModeLabels = {
     0: 'Auto',
@@ -147,7 +270,9 @@
   let activeView = $state('overview');
   let recipeDraft = $state(machineContract.constants.recipeDefaultSlot.value);
   let patternDraft = $state(machineContract.constants.recipeDefaultSlot.value);
+  let activeRecipeSection = $state('gluing');
   let pendingRecipeCommand = $state(null);
+  let pendingParameterWrite = $state(null);
   let pendingForce = $state(null);
   let confirmAction = $state(null);
   let recipeMessage = $state('');
@@ -170,6 +295,9 @@
   onMount(() => {
     for (const key of subscriptions) {
       subscribe(key, key.startsWith('metrics.') ? 1000 : 250);
+    }
+    for (const key of recipeParameterKeys) {
+      subscribe(key, 250);
     }
 
     const freshnessTimer = setInterval(() => {
@@ -357,8 +485,44 @@
   }
 
   function recipePendingText() {
+    if (pendingParameterWrite) return `${pendingParameterWrite.label} write pending`;
     if (!pendingRecipeCommand) return 'Idle';
     return `${pendingRecipeCommand.label} pending`;
+  }
+
+  function contractBounds(key) {
+    return numberBounds(machineContract, machineContract.symbols[key]);
+  }
+
+  function normalizeParameterValue(key, value) {
+    const bounds = contractBounds(key);
+    const numericValue = Number(value);
+    const min = bounds.min ?? numericValue;
+    const max = bounds.max ?? numericValue;
+    return clamp(numericValue, min, max);
+  }
+
+  function parameterValue(key) {
+    return values[key] ?? machineContract.symbols[key]?.mock ?? 0;
+  }
+
+  function parameterWriteDisabled(key) {
+    return (
+      !connectionOnline() ||
+      Boolean(pendingRecipeCommand) ||
+      Boolean(pendingParameterWrite) ||
+      recipeQuality(key) === 'unknown'
+    );
+  }
+
+  function recipeSectionIndex() {
+    return recipeSections.findIndex((section) => section.id === activeRecipeSection);
+  }
+
+  function moveRecipeSection(direction) {
+    const index = recipeSectionIndex();
+    const nextIndex = (index + direction + recipeSections.length) % recipeSections.length;
+    activeRecipeSection = recipeSections[nextIndex].id;
   }
 
   function diagnosticStatusText() {
@@ -399,6 +563,32 @@
     };
   }
 
+  function requestParameterWrite(key, value, label) {
+    const current = values[key];
+    confirmAction = {
+      type: 'parameter',
+      key,
+      value,
+      label,
+      title: `Write ${label}`,
+      message: `Write ${label} from ${formatValue(current, 'Unknown')} to ${formatValue(
+        value,
+        'Unknown',
+      )}? Save Recipe persists accepted working-recipe changes.`,
+      confirmLabel: 'Write',
+      variant: 'default',
+    };
+  }
+
+  function requestGunToggle(gun) {
+    const nextValue = !Boolean(values[gun.enableKey]);
+    requestParameterWrite(
+      gun.enableKey,
+      nextValue,
+      `${gun.label} ${nextValue ? 'enable' : 'disable'}`,
+    );
+  }
+
   function requestForce(coil, mode) {
     confirmAction = {
       type: 'force',
@@ -421,6 +611,11 @@
       return;
     }
 
+    if (action.type === 'parameter') {
+      await applyParameterWrite(action.key, action.value, action.label);
+      return;
+    }
+
     if (action.type === 'force') {
       await applyForce(action.coil, action.mode);
       return;
@@ -439,6 +634,21 @@
     } catch (error) {
       recipeMessage = '';
       recipeError = error.message;
+    }
+  }
+
+  async function applyParameterWrite(key, value, label) {
+    recipeError = '';
+    recipeMessage = '';
+    pendingParameterWrite = { key, label, value };
+
+    try {
+      await write(key, value);
+      recipeMessage = `${label} accepted`;
+    } catch (error) {
+      recipeError = error.message;
+    } finally {
+      pendingParameterWrite = null;
     }
   }
 
@@ -705,10 +915,76 @@
         </section>
       {:else if activeView === 'recipe'}
         <section class="recipe-layout" aria-label="Recipe and pattern controls">
-          <section class="recipe-header">
-            <div>
+          <section class="recipe-redesign-header">
+            <div class="recipe-name-field">
               <span class="eyebrow">Recipe</span>
-              <h2>Recipe Controls</h2>
+              <strong>Working Recipe</strong>
+            </div>
+            <div class="recipe-select-field">
+              <span>Select</span>
+              <ParamInput
+                title="Recipe"
+                numpadLabel="Select - Recipe"
+                value={recipeDraft}
+                min={0}
+                max={recipeMax}
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onchange={(value) => (recipeDraft = clamp(value, 0, recipeMax))}
+              />
+            </div>
+            <div class="recipe-select-field">
+              <span>Pattern</span>
+              <ParamInput
+                title="Index"
+                numpadLabel="Pattern - Index"
+                value={patternDraft}
+                min={1}
+                max={patternMax}
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onchange={(value) => (patternDraft = clamp(value, 1, patternMax))}
+              />
+            </div>
+            <div class="recipe-icon-actions">
+              <button
+                type="button"
+                class="icon-command"
+                aria-label="Load Recipe"
+                title="Load selected recipe"
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onclick={() => requestRecipeCommand('Load')}
+              >
+                <ChevronRight size={24} />
+              </button>
+              <button
+                type="button"
+                class="icon-command"
+                aria-label="Apply Pattern"
+                title="Apply pattern index"
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onclick={requestPatternWrite}
+              >
+                <SlidersHorizontal size={24} />
+              </button>
+              <button
+                type="button"
+                class="icon-command"
+                aria-label="Save Recipe"
+                title="Save recipe"
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onclick={() => requestRecipeCommand('Save')}
+              >
+                <SaveIcon size={24} />
+              </button>
+              <button
+                type="button"
+                class="icon-command warning"
+                aria-label="Discard Recipe"
+                title="Discard recipe changes"
+                disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
+                onclick={() => requestRecipeCommand('Discard')}
+              >
+                <XIcon size={26} />
+              </button>
             </div>
             <StatusBanner
               online={connectionOnline()}
@@ -742,78 +1018,198 @@
             />
           </section>
 
-          <section class="recipe-command-panel">
-            <div class="recipe-command-copy">
-              <span class="eyebrow">Command Handshake</span>
-              <h3>{recipePendingText()}</h3>
-              <p>
-                Active recipe changes only after selected index is written and E_RecipeCommand.Load
-                is confirmed by PLC readback.
-              </p>
-            </div>
+          <section class="recipe-parameter-surface" aria-label="Recipe parameter editor">
+            <button
+              type="button"
+              class="recipe-page-arrow"
+              aria-label="Previous recipe section"
+              onclick={() => moveRecipeSection(-1)}
+            >
+              <ChevronLeft size={30} />
+            </button>
 
-            <div class="recipe-form">
-              <ParamRow label="Recipe">
-                <ParamInput
-                  title="Selected"
-                  value={recipeDraft}
-                  min={0}
-                  max={recipeMax}
-                  onchange={(value) => (recipeDraft = clamp(value, 0, recipeMax))}
-                />
-              </ParamRow>
-              <ParamRow label="Pattern">
-                <ParamInput
-                  title="Index"
-                  value={patternDraft}
-                  min={1}
-                  max={patternMax}
-                  onchange={(value) => (patternDraft = clamp(value, 1, patternMax))}
-                />
-              </ParamRow>
+            <div class="recipe-parameter-panel">
+              {#if activeRecipeSection === 'gluing'}
+                <section class="recipe-tab-page" aria-label="Gluing recipe parameters">
+                  <div class="recipe-window-grid">
+                    {#each glueWindows as window}
+                      <ParamRow label="{window.label} ms">
+                        <ParamInput
+                          title="Start"
+                          unit="ms"
+                          value={parameterValue(window.startKey)}
+                          {...contractBounds(window.startKey)}
+                          disabled={parameterWriteDisabled(window.startKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              window.startKey,
+                              normalizeParameterValue(window.startKey, value),
+                              `${window.label} start`,
+                            )}
+                        />
+                        <ParamInput
+                          title="Stop"
+                          unit="ms"
+                          value={parameterValue(window.stopKey)}
+                          {...contractBounds(window.stopKey)}
+                          disabled={parameterWriteDisabled(window.stopKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              window.stopKey,
+                              normalizeParameterValue(window.stopKey, value),
+                              `${window.label} stop`,
+                            )}
+                        />
+                      </ParamRow>
+                    {/each}
+                  </div>
 
-              <div class="recipe-actions">
-                <button
-                  class="kita-button"
-                  type="button"
-                  disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                  onclick={() => requestRecipeCommand('Load')}
-                >
-                  Load
-                </button>
-                <button
-                  class="kita-button secondary"
-                  type="button"
-                  disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                  onclick={requestPatternWrite}
-                >
-                  Apply Pattern
-                </button>
-                <button
-                  class="kita-button secondary"
-                  type="button"
-                  disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                  onclick={() => requestRecipeCommand('Save')}
-                >
-                  Save
-                </button>
-                <button
-                  class="kita-button warning"
-                  type="button"
-                  disabled={!connectionOnline() || Boolean(pendingRecipeCommand)}
-                  onclick={() => requestRecipeCommand('Discard')}
-                >
-                  Discard
-                </button>
-              </div>
-
-              {#if recipeError}
-                <p class="recipe-alert danger">{recipeError}</p>
-              {:else if recipeMessage}
-                <p class="recipe-alert">{recipeMessage}</p>
+                  <div class="glue-gun-grid" aria-label="Glue gun controls">
+                    {#each glueGuns as gun}
+                      <article class="glue-gun-card" data-quality={recipeQuality(gun.enableKey)}>
+                        <button
+                          type="button"
+                          class:active={Boolean(values[gun.enableKey])}
+                          disabled={parameterWriteDisabled(gun.enableKey)}
+                          onclick={() => requestGunToggle(gun)}
+                        >
+                          {gun.label}
+                        </button>
+                        <ParamInput
+                          title="Offset"
+                          unit="ms"
+                          value={parameterValue(gun.offsetKey)}
+                          {...contractBounds(gun.offsetKey)}
+                          disabled={parameterWriteDisabled(gun.offsetKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              gun.offsetKey,
+                              normalizeParameterValue(gun.offsetKey, value),
+                              `${gun.label} offset`,
+                            )}
+                        />
+                      </article>
+                    {/each}
+                  </div>
+                </section>
+              {:else if activeRecipeSection === 'forming'}
+                <section class="recipe-tab-page" aria-label="Forming recipe parameters">
+                  <div class="forming-grid">
+                    {#each formingStations as station}
+                      <ParamRow label="{station.label} ms">
+                        <ParamInput
+                          title="Start"
+                          unit="ms"
+                          value={parameterValue(station.startKey)}
+                          {...contractBounds(station.startKey)}
+                          disabled={parameterWriteDisabled(station.startKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              station.startKey,
+                              normalizeParameterValue(station.startKey, value),
+                              `${station.label} start`,
+                            )}
+                        />
+                        <ParamInput
+                          title="Stop"
+                          unit="ms"
+                          value={parameterValue(station.stopKey)}
+                          {...contractBounds(station.stopKey)}
+                          disabled={parameterWriteDisabled(station.stopKey)}
+                          onchange={(value) =>
+                            requestParameterWrite(
+                              station.stopKey,
+                              normalizeParameterValue(station.stopKey, value),
+                              `${station.label} stop`,
+                            )}
+                        />
+                      </ParamRow>
+                    {/each}
+                  </div>
+                </section>
+              {:else}
+                <section class="recipe-tab-page" aria-label="Vacuum recipe parameters">
+                  <div class="forming-grid">
+                    {#each vacuumParameters as parameter}
+                      {#if parameter.valueKey}
+                        <ParamRow label="{parameter.label} ms">
+                          <ParamInput
+                            title="Timer"
+                            unit="ms"
+                            value={parameterValue(parameter.valueKey)}
+                            {...contractBounds(parameter.valueKey)}
+                            disabled={parameterWriteDisabled(parameter.valueKey)}
+                            onchange={(value) =>
+                              requestParameterWrite(
+                                parameter.valueKey,
+                                normalizeParameterValue(parameter.valueKey, value),
+                                parameter.label,
+                              )}
+                          />
+                        </ParamRow>
+                      {:else}
+                        <ParamRow label="{parameter.label} ms">
+                          <ParamInput
+                            title="Start"
+                            unit="ms"
+                            value={parameterValue(parameter.startKey)}
+                            {...contractBounds(parameter.startKey)}
+                            disabled={parameterWriteDisabled(parameter.startKey)}
+                            onchange={(value) =>
+                              requestParameterWrite(
+                                parameter.startKey,
+                                normalizeParameterValue(parameter.startKey, value),
+                                `${parameter.label} start`,
+                              )}
+                          />
+                          <ParamInput
+                            title="Stop"
+                            unit="ms"
+                            value={parameterValue(parameter.stopKey)}
+                            {...contractBounds(parameter.stopKey)}
+                            disabled={parameterWriteDisabled(parameter.stopKey)}
+                            onchange={(value) =>
+                              requestParameterWrite(
+                                parameter.stopKey,
+                                normalizeParameterValue(parameter.stopKey, value),
+                                `${parameter.label} stop`,
+                              )}
+                          />
+                        </ParamRow>
+                      {/if}
+                    {/each}
+                  </div>
+                </section>
               {/if}
+
+              <nav class="recipe-section-tabs" aria-label="Recipe parameter sections">
+                {#each recipeSections as section}
+                  <button
+                    type="button"
+                    class:active={activeRecipeSection === section.id}
+                    onclick={() => (activeRecipeSection = section.id)}
+                  >
+                    {section.label}
+                  </button>
+                {/each}
+              </nav>
             </div>
+
+            <button
+              type="button"
+              class="recipe-page-arrow"
+              aria-label="Next recipe section"
+              onclick={() => moveRecipeSection(1)}
+            >
+              <ChevronRight size={30} />
+            </button>
           </section>
+
+          {#if recipeError}
+            <p class="recipe-alert danger">{recipeError}</p>
+          {:else if recipeMessage}
+            <p class="recipe-alert">{recipeMessage}</p>
+          {/if}
         </section>
       {:else if activeView === 'diagnostics'}
         <section class="diagnostics-layout" aria-label="Manual and IO diagnostics">
