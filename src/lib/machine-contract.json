@@ -59,6 +59,47 @@
       "Active": 1,
       "ForcedOn": 2,
       "ForcedOff": 3
+    },
+    "E_MachineStates": {
+      "Off": 0,
+      "Ready": 1,
+      "Starting": 2,
+      "Idle": 3,
+      "CycleStarting": 4,
+      "Cycling": 5,
+      "CycleStopping": 6,
+      "CyclePausing": 7,
+      "CyclePaused": 8,
+      "HopperEmptyPausing": 9,
+      "HopperEmptyPaused": 10,
+      "Faulted": 11
+    },
+    "E_DownStreamStates": {
+      "Idle": 0,
+      "TrayAtSensor": 1,
+      "DelayActive": 2,
+      "SensorClear": 3
+    },
+    "E_BlankPickerStates": {
+      "Idle": 0,
+      "Active": 1
+    },
+    "E_GluingStates": {
+      "GluingIdle": 0,
+      "GluingActive": 1
+    },
+    "E_BackstopStates": {
+      "Idle": 0,
+      "Active": 1
+    },
+    "E_FormingStates": {
+      "Idle": 0,
+      "Active": 1
+    },
+    "E_ConveyorStates": {
+      "Idle": 0,
+      "Active": 1,
+      "Stopping": 2
     }
   },
   "symbols": {
@@ -269,6 +310,658 @@
       "safetyLevel": "metric",
       "writeConfirmation": "none",
       "mock": 0
+    },
+    "state.machine": {
+      "symbol": "MF.States.MachineState.eMachineState",
+      "plcType": "E_MachineStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Off"
+    },
+    "state.machine.isIdle": {
+      "symbol": "MF.States.MachineState.bIsIdle",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": true
+    },
+    "state.machine.cycleActive": {
+      "symbol": "MF.States.MachineState.bCycleIsActive",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "state.machine.cycleOn": {
+      "symbol": "MF.States.MachineState.bCycleIsOn",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "state.downstream": {
+      "symbol": "MF.States.DownstreamState.nDownstreamState",
+      "plcType": "E_DownStreamStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Idle"
+    },
+    "state.blankPicker": {
+      "symbol": "MF.States.BlankPicker.eBlankPickerState",
+      "plcType": "E_BlankPickerStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Idle"
+    },
+    "state.gluing": {
+      "symbol": "MF.States.Gluing.nGluingState",
+      "plcType": "E_GluingStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "GluingIdle"
+    },
+    "state.backstops": {
+      "symbol": "MF.States.Backstops.nBackstopState",
+      "plcType": "E_BackstopStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Idle"
+    },
+    "state.forming": {
+      "symbol": "MF.States.Forming.nFormingState",
+      "plcType": "E_FormingStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Idle"
+    },
+    "state.conveyor": {
+      "symbol": "MF.States.Conveyor.nConveyorState",
+      "plcType": "E_ConveyorStates",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "machine-state",
+      "writeConfirmation": "none",
+      "mock": "Idle"
+    },
+    "tray.position.picked": {
+      "symbol": "MF.TrayPosition.TrayPicked",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "tray-position",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "tray.position.gluing": {
+      "symbol": "MF.TrayPosition.TrayGluing",
+      "plcType": "INT",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "tray-position",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "tray.position.forming": {
+      "symbol": "MF.TrayPosition.TrayForming",
+      "plcType": "INT",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "tray-position",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "tray.position.firstCycle": {
+      "symbol": "MF.TrayPosition.FirstCycle",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "tray-position",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "machine.faulted": {
+      "symbol": "MF.Faults.bIsMachineFaulted",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "fault-observe",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "machine.firstFaultCode": {
+      "symbol": "MF.Faults.nFirstFaultCode",
+      "plcType": "UINT",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "fault-observe",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "machine.activeFaultCount": {
+      "symbol": "MF.Faults.nActiveFaultCount",
+      "plcType": "UINT",
+      "access": "read",
+      "pages": ["overview", "diagnostics"],
+      "updateMs": 250,
+      "safetyLevel": "fault-observe",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "parameters.machineStartDelay": {
+      "symbol": "MF.Parameters.nMachineStartDelay",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.cycleStartDelay": {
+      "symbol": "MF.Parameters.nCycleStartDelay",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.longPressDelay": {
+      "symbol": "MF.Parameters.nLongPressDelay",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 1000,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.conveyorStopDelay": {
+      "symbol": "MF.Parameters.nConveyorStopDelay",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.downstreamStop": {
+      "symbol": "MF.Parameters.nDownstreamStop",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.downstreamStart": {
+      "symbol": "MF.Parameters.nDownstreamStart",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.ignoreHopperEmpty": {
+      "symbol": "MF.Parameters.bIgnoreHopperEmpty",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "parameters.ignorePickVerification": {
+      "symbol": "MF.Parameters.bIgnorePickVerification",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "parameters.gluingDisabled": {
+      "symbol": "MF.Parameters.bGluingDisabled",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "machine-parameter",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "parameters.trayDemand.target": {
+      "symbol": "MF.Parameters.nTrayDemandTarget",
+      "plcType": "UDINT",
+      "access": "readwrite",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "tray-demand",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "parameters.trayDemand.actual": {
+      "symbol": "MF.Parameters.nTrayDemandActual",
+      "plcType": "UDINT",
+      "access": "read",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "tray-demand",
+      "writeConfirmation": "none",
+      "mock": 0
+    },
+    "parameters.trayDemand.enabled": {
+      "symbol": "MF.Parameters.bTrayDemandEnabled",
+      "plcType": "BOOL",
+      "access": "read",
+      "pages": ["overview", "recipe"],
+      "updateMs": 250,
+      "safetyLevel": "tray-demand",
+      "writeConfirmation": "none",
+      "mock": false
+    },
+    "parameters.gluing.lh1Offset": {
+      "symbol": "MF.Parameters.Gluing.nLH1Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "parameters.gluing.lh2Offset": {
+      "symbol": "MF.Parameters.Gluing.nLH2Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "parameters.gluing.lh3Offset": {
+      "symbol": "MF.Parameters.Gluing.nLH3Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "parameters.gluing.rh1Offset": {
+      "symbol": "MF.Parameters.Gluing.nRH1Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "parameters.gluing.rh2Offset": {
+      "symbol": "MF.Parameters.Gluing.nRH2Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "parameters.gluing.rh3Offset": {
+      "symbol": "MF.Parameters.Gluing.nRH3Offset",
+      "plcType": "INT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "glue-parameter",
+      "writeConfirmation": "readback",
+      "mock": 0
+    },
+    "recipe.forming.backStop.start": {
+      "symbol": "MF.Recipes[0].Forming.BackStop.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.backStop.stop": {
+      "symbol": "MF.Recipes[0].Forming.BackStop.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.bottomStop.start": {
+      "symbol": "MF.Recipes[0].Forming.BottomStop.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.bottomStop.stop": {
+      "symbol": "MF.Recipes[0].Forming.BottomStop.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.rotary.start": {
+      "symbol": "MF.Recipes[0].Forming.Rotary.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.rotary.stop": {
+      "symbol": "MF.Recipes[0].Forming.Rotary.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.sideAlign.start": {
+      "symbol": "MF.Recipes[0].Forming.SideAlign.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.sideAlign.stop": {
+      "symbol": "MF.Recipes[0].Forming.SideAlign.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.compression.start": {
+      "symbol": "MF.Recipes[0].Forming.Compression.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.forming.compression.stop": {
+      "symbol": "MF.Recipes[0].Forming.Compression.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-forming-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.vacuum.vacuumOn.start": {
+      "symbol": "MF.Recipes[0].Vacuum.VacuumOn.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-vacuum-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.vacuum.vacuumOn.stop": {
+      "symbol": "MF.Recipes[0].Vacuum.VacuumOn.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-vacuum-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.vacuum.verifyTimer": {
+      "symbol": "MF.Recipes[0].Vacuum.VerifyTimer",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-vacuum-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.pattern.current.leading.start": {
+      "symbol": "MF.HMI.CurrentPattern.Leading.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.pattern.current.leading.stop": {
+      "symbol": "MF.HMI.CurrentPattern.Leading.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.pattern.current.trailing.start": {
+      "symbol": "MF.HMI.CurrentPattern.Trailing.nStart",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.pattern.current.trailing.stop": {
+      "symbol": "MF.HMI.CurrentPattern.Trailing.nStop",
+      "plcType": "UINT",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-window",
+      "writeConfirmation": "readback",
+      "mock": 0,
+      "bounds": {
+        "min": 0
+      }
+    },
+    "recipe.pattern.current.guns.lh1": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bLH1",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "recipe.pattern.current.guns.lh2": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bLH2",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "recipe.pattern.current.guns.lh3": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bLH3",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "recipe.pattern.current.guns.rh1": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bRH1",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "recipe.pattern.current.guns.rh2": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bRH2",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
+    },
+    "recipe.pattern.current.guns.rh3": {
+      "symbol": "MF.HMI.CurrentPattern.Guns.bRH3",
+      "plcType": "BOOL",
+      "access": "readwrite",
+      "pages": ["recipe"],
+      "updateMs": 250,
+      "safetyLevel": "recipe-glue-gun-enable",
+      "writeConfirmation": "readback",
+      "mock": false
     }
   },
   "coilNames": [
@@ -319,5 +1012,14 @@
       "writeConfirmation": "readback-bOut-eStatus",
       "mock": "Auto"
     }
+  },
+  "referenceRecipeParameters": {
+    "sourceDecision": "docs/decisions/0011-reference-recipe-parameter-contract.md",
+    "workingRecipeRoot": "MF.Recipes[0]",
+    "currentPatternRoot": "MF.HMI.CurrentPattern",
+    "formingStations": ["BackStop", "BottomStop", "Rotary", "SideAlign", "Compression"],
+    "glueWindows": ["Leading", "Trailing"],
+    "glueGuns": ["LH1", "LH2", "LH3", "RH1", "RH2", "RH3"],
+    "trayDemand": ["nTrayDemandTarget", "nTrayDemandActual", "bTrayDemandEnabled"]
   }
 }
