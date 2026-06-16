@@ -289,14 +289,32 @@ DoD:
 - No positional-setpoint controls; only retrofit-applicable stations shown.
 - Failing-path tests (rejected write, ADS drop) and a browser/viewport test are green.
 
+## Phase: Release Packaging
+
+Goal: produce a self-contained, pre-built release artifact the CX can run with only Node — no Vite, no dev dependencies, no on-device build (decision 0012).
+
+Depends on: Main Page Redesign, Recipe Screen Redesign.
+
+Brief:
+- Add an `npm run package` script that builds the app and assembles a bundle: `dist/`, `server.js`, `src/lib/contractRuntime.js`, `src/lib/machine-contract.json`, a runtime-only `package.json` (deps `ads-client`, `ws`), the `systemd/sveltehmi.service` unit, and a short run/rollback note.
+- Provide production `node_modules` in the bundle, or document `npm ci --omit=dev` against the trimmed manifest.
+- Move `@lucide/svelte` to `devDependencies` (build-only) so the runtime install stays lean.
+- Keep the bundle OS-portable (Linux CX and Windows test host); no machine-specific absolute paths.
+
+DoD:
+- `npm run package` produces a bundle that runs via `node server.js` on a machine with only Node installed (no dev deps, no build step).
+- From the bundle alone, `node server.js --smoke` succeeds and `/api/health` responds.
+- The bundle contains no dev/build dependencies and no test toolchain.
+- Auditor verifies the bundle has no build step and runs from a clean extract on a Node-only environment.
+
 ## Phase: Service Deployment
 
 Goal: move from manual `nohup` testing to a reversible supervised service.
 
-Depends on: Gateway Contract Layer, HMI Shell, Overview And Run Screen, Main Page Redesign, Recipe Screen Redesign.
+Depends on: Gateway Contract Layer, HMI Shell, Overview And Run Screen, Main Page Redesign, Recipe Screen Redesign, Release Packaging.
 
 Brief:
-- Install `systemd/sveltehmi.service` with the working ADS LAN route environment.
+- Deploy the Release Packaging artifact to the CX and install `systemd/sveltehmi.service` with the working ADS LAN route environment. Do not build on the device.
 - Keep TF2000 installed.
 - Do not change TF1200 `startUrl` in this phase.
 
