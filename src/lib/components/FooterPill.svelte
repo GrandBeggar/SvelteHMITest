@@ -1,27 +1,23 @@
 <script>
-  import { stateMachineLabel, stateName } from './stateMachine.js';
+  import { stateName } from './stateMachine.js';
 
-  let { label = '', state = 0 } = $props();
+  let { label, state = 'inactive' } = $props();
 
   const stateClass = $derived(stateName(state));
-  const stateLabel = $derived(label || stateMachineLabel(state));
 </script>
 
-<span class="state-chip state-{stateClass}" data-state={stateClass}>
-  {stateLabel}
+<span class="footer-pill state-{stateClass}">
+  {label}
 </span>
 
 <style>
-  .state-chip {
-    min-height: 24px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 2px;
-    padding: 0 10px;
-    font-size: 12px;
+  .footer-pill {
+    overflow: hidden;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 

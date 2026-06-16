@@ -26,14 +26,14 @@
 
 <style>
   .value-display {
-    min-height: 48px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+    min-height: 34px;
+    display: flex;
     align-items: center;
-    gap: var(--kita-space-2);
+    gap: 8px;
     border: 1px solid var(--kita-border-emphasis);
     border-radius: var(--kita-radius-control);
-    padding: var(--kita-space-2) var(--kita-space-3);
+    padding: 4px 10px;
     background: var(--kita-bg-inset);
   }
 
@@ -56,32 +56,32 @@
 
   span {
     color: var(--kita-text-muted);
-    font-size: var(--kita-font-xs);
-    font-weight: 850;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
   }
 
   strong {
-    justify-self: end;
+    margin-left: auto;
     color: var(--kita-text-primary);
     font-family: var(--kita-font-mono);
-    font-size: var(--kita-font-md);
+    font-size: 16px;
     font-style: normal;
-    font-weight: 850;
+    font-weight: 700;
   }
 
   small {
     margin-left: var(--kita-space-1);
     color: var(--kita-text-muted);
     font-family: var(--kita-font-sans);
-    font-size: var(--kita-font-xs);
+    font-size: 10px;
   }
 
   em {
-    grid-column: 1 / -1;
     color: var(--kita-text-warning);
-    font-size: var(--kita-font-xs);
+    font-size: 10px;
     font-style: normal;
-    font-weight: 850;
+    font-weight: 700;
     text-transform: uppercase;
   }
 </style>

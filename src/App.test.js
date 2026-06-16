@@ -156,9 +156,11 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
 
   render(App);
 
-  expect(screen.getByText('SvelteHMI')).toBeTruthy();
+  expect(screen.getByText('KITA')).toBeTruthy();
+  expect(screen.getByText('PACKAGING MACHINERY')).toBeTruthy();
   expect(screen.getByRole('navigation', { name: 'HMI views' })).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Overview' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Home' })).toBeTruthy();
+  expect(screen.getByLabelText('PLC Disconnected')).toBeTruthy();
   expect(screen.getByText('Main Page')).toBeTruthy();
   expect(screen.getByText('Machine States')).toBeTruthy();
 
@@ -172,7 +174,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     message: 'Mock mode active',
   });
 
-  await waitFor(() => expect(screen.getByText('mock')).toBeTruthy());
+  await waitFor(() => expect(screen.getByText('Mock mode active')).toBeTruthy());
   sendStatus(ws, {
     ads: false,
     mode: 'ads',
@@ -230,7 +232,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
   });
   sendRecipeParameterValues(ws);
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipes' }));
   await waitFor(() => expect(screen.getByText('Working Recipe')).toBeTruthy());
   expect(screen.getByLabelText('Recipe parameter editor')).toBeTruthy();
   expect(screen.getByLabelText('Gluing recipe parameters')).toBeTruthy();
@@ -579,7 +581,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     expect(screen.getByText('manual.coils.vacuum.force: ADS rejected force write')).toBeTruthy(),
   );
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipes' }));
   await waitFor(() =>
     expect(
       ws.sent.some(
@@ -647,7 +649,7 @@ test('renders the HMI shell and subscribes through contract keys', async () => {
     requestId: forceWrite.requestId,
   });
 
-  await fireEvent.click(screen.getByRole('button', { name: 'Recipe' }));
+  await fireEvent.click(screen.getByRole('button', { name: 'Recipes' }));
   sendStatus(ws, { ads: true, mode: 'ads', message: 'ADS connected' });
   sendOverviewValues(ws, {
     'recipe.activeIndex': 1,

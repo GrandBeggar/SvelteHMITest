@@ -46,27 +46,28 @@
 
 <style>
   .param-input {
-    min-width: 116px;
+    min-width: 110px;
     display: flex;
     flex-direction: column;
-    gap: var(--kita-space-1);
+    gap: 2px;
   }
 
   .param-title {
     color: var(--kita-text-action);
-    font-size: var(--kita-font-xs);
-    font-weight: 800;
+    font-size: 11px;
+    font-weight: 600;
   }
 
   .param-box {
-    min-height: 48px;
+    width: 110px;
+    min-height: 34px;
     display: flex;
     align-items: baseline;
     justify-content: flex-end;
-    gap: var(--kita-space-1);
+    gap: 4px;
     border: 1px solid var(--kita-border-emphasis);
     border-radius: var(--kita-radius-control);
-    padding: 0 var(--kita-space-3);
+    padding: 0 10px;
     background: var(--kita-bg-inset);
     color: var(--kita-text-primary);
     cursor: pointer;
@@ -84,8 +85,8 @@
 
   .param-value {
     font-family: var(--kita-font-mono);
-    font-size: var(--kita-font-lg);
-    font-weight: 850;
+    font-size: 15px;
+    font-weight: 700;
   }
 
   .param-unit {

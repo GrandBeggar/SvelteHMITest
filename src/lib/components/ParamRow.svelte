@@ -15,25 +15,26 @@
 
 <style>
   .param-row {
-    display: grid;
-    grid-template-columns: minmax(130px, 180px) minmax(0, 1fr);
-    align-items: end;
-    gap: var(--kita-space-3);
-    padding: var(--kita-space-2) 0;
+    min-width: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 6px 0;
   }
 
   .param-label {
-    padding-bottom: var(--kita-space-2);
+    min-width: 142px;
+    padding-bottom: 6px;
     color: var(--kita-text-primary);
-    font-weight: 850;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .param-inputs {
     min-width: 0;
     display: flex;
-    flex-wrap: wrap;
     align-items: end;
-    gap: var(--kita-space-2);
+    gap: 8px;
   }
 
   @media (max-width: 560px) {
